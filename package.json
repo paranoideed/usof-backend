@@ -1,0 +1,29 @@
+{
+  "type": "module",
+  "name": "usof-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "openapi:version": "openapi-generator-cli version",
+    "openapi:gen:models": "openapi-generator-cli generate -i openapi/api-bundled.yaml -g typescript-fetch -o src/generated/openapi --global-property models,modelDocs=false,apiDocs=false,apis=false,supportingFiles=false"
+  },
+  "private": true,
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "express": "^5.1.0",
+    "js-yaml": "^4.1.0",
+    "knex": "^3.1.0",
+    "mysql2": "^3.14.5",
+    "process": "^0.11.10",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.23.3",
+    "nodemon": "^3.1.10"
+  }
+}

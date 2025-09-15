@@ -1,0 +1,17 @@
+server:
+  host: "localhost"
+  port: ":8000"
+  logging:
+    level: "debug"
+    format: "text"
+
+jwt:
+  secret_key: "suppersecretkey"
+
+database:
+  sql:
+    host: "localhost"
+    port: 5678
+    user: "usof"
+    name: "usof"
+    password: "password"
