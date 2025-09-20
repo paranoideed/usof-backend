@@ -3,20 +3,18 @@ export const categoriesTable = "categories";
 export default class CategoriesQ {
     constructor(builder) {
         this.builder = builder;
-        this.counter = builder.clone().count({ count: '*' });
+        this.counter = builder.clone();
     }
 
     New() {
         return new CategoriesQ(this.builder.clone());
     }
 
-    async insert({ id, title, description = null, created_at = new Date(), updated_at = new Date() }) {
+    async insert({ id, title, createdAt = new Date() }) {
         const data = {
-            id: id,
-            title: title,
-            description: description,
-            created_at: created_at,
-            updated_at: updated_at,
+            ...(id !== undefined ? { id } : {}),
+            title,
+            created_at: createdAt,
         };
         await this.builder.clone().insert(data);
         return data;
@@ -24,19 +22,22 @@ export default class CategoriesQ {
 
     async get() {
         const row = await this.builder.first();
-        return row ?? null;
+        return row ? toCategory(row) : null;
     }
 
     async select() {
         const rows = await this.builder;
-        return rows ?? [];
+        return (rows ?? []).map(toCategory);
     }
 
-    async update({ title, description, updated_at = new Date() }) {
+    async update(set) {
         const setMap = {};
-        if (title !== undefined) setMap.title = title;
-        if (description !== undefined) setMap.description = description;
-        if (updated_at !== undefined) setMap.updated_at = updated_at;
+        if (Object.prototype.hasOwnProperty.call(set, "title")) setMap.title = set.title;
+        if (Object.prototype.hasOwnProperty.call(set, "updatedAt")) {
+            setMap.updated_at = set.updatedAt;
+        } else {
+            setMap.updated_at = new Date();
+        }
 
         await this.builder.clone().update(setMap);
     }
@@ -89,5 +90,16 @@ export default class CategoriesQ {
         const row = await this.counter.clone().clearOrder?.().count({ cnt: "*" }).first();
         const val = row?.cnt ?? row?.['count(*)'] ?? Object.values(row ?? {0:0})[0] ?? 0;
         return Number(val);
+    }
+}
+
+function toCategory(row) {
+    let res = {
+        id: row.id,
+        title: row.title,
+        createdAt: row.created_at,
+    };
+    if (row.updated_at) {
+        res.updatedAt = row.updated_at;
     }
 }

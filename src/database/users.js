@@ -10,18 +10,18 @@ export default class UsersQ {
         return new UsersQ(this.builder.clone());
     }
 
-    async insert({ id, role, email, login, password_hash, pseudonym = null, avatar = null, reputation = 0, created_at = new Date() }) {
+    async insert({ id, role, email, username, pasHash, pseudonym = null, avatar = null, reputation = 0, createdAt = new Date() }) {
         const user = {
             id: id,
             role: role,
             email: email,
-            login: login,
-            password_hash: password_hash,
+            username: username,
+            pasHash: pasHash,
             pseudonym: pseudonym,
             avatar: avatar,
             reputation: reputation,
-            updated_at: created_at,
-            created_at: created_at,
+            updated_at: createdAt,
+            created_at: createdAt,
         }
         await this.builder.insert(user);
         return user;
@@ -37,19 +37,19 @@ export default class UsersQ {
         return rows ?? [];
     }
 
-    async update({ role, email, login, password_hash, pseudonym, avatar, reputation, updated_at = new Date() }) {
-        const setMap = {};
-        if (role !== undefined) setMap.role = role;
-        if (email !== undefined) setMap.email = email;
-        if (login !== undefined) setMap.login = login;
-        if (password_hash !== undefined) setMap.password_hash = password_hash;
-        if (pseudonym !== undefined) setMap.pseudonym = pseudonym;
-        if (avatar !== undefined) setMap.avatar = avatar;
-        if (reputation !== undefined) setMap.reputation = reputation;
-        if (updated_at !== undefined) setMap.updated_at = updated_at;
-
-        await this.builder.update(setMap);
+    async update(set) {
+        const patch = {};
+        if (Object.prototype.hasOwnProperty.call(set, "role")) patch.role = set.role;
+        if (Object.prototype.hasOwnProperty.call(set, "email")) patch.email = set.email;
+        if (Object.prototype.hasOwnProperty.call(set, "username")) patch.username = set.username;
+        if (Object.prototype.hasOwnProperty.call(set, "password_hash")) patch.password_hash = set.password_hash;
+        if (Object.prototype.hasOwnProperty.call(set, "pseudonym")) patch.pseudonym = set.pseudonym;
+        if (Object.prototype.hasOwnProperty.call(set, "avatar")) patch.avatar = set.avatar;
+        if (Object.prototype.hasOwnProperty.call(set, "reputation")) patch.reputation = set.reputation;
+        patch.updated_at = Object.prototype.hasOwnProperty.call(set, "updatedAt") ? set.updatedAt : new Date();
+        await this.builder.update(patch);
     }
+
 
     async delete() {
         await this.builder.del();
@@ -74,14 +74,14 @@ export default class UsersQ {
         return this;
     }
 
-    filterLogin(login) {
-        this.builder = this.builder.where('login', login);
-        this.counter = this.counter.where('login', login);
+    filterUsername(username) {
+        this.builder = this.builder.where('username', username);
+        this.counter = this.counter.where('username', username);
         return this;
     }
 
-    filterLoginLike(substr) {
-        const cond = "login LIKE ?";
+    filterUsernameLike(substr) {
+        const cond = "username LIKE ?";
         const val = `%${substr}%`;
         this.builder = this.builder.whereRaw(cond, [val]);
         this.counter = this.counter.whereRaw(cond, [val]);
@@ -100,7 +100,6 @@ export default class UsersQ {
 
     async page(limit, offset) {
         this.builder  = this.builder.limit(limit).offset(offset);
-        this.counter = this.counter.limit(limit).offset(offset);
         return this;
     }
 
@@ -109,4 +108,28 @@ export default class UsersQ {
         const val = row?.count ?? row?.['count(*)'] ?? Object.values(row ?? { 0: 0 })[0] ?? 0;
         return Number(val);
     }
+}
+
+function toUser(row) {
+    let res = {
+        id: row.id,
+        role: row.role,
+        email: row.email,
+        username: row.username,
+        password_hash: row.password_hash,
+        reputation: row.reputation,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+    };
+    if (row.updated_at) {
+        res.updatedAt = row.updated_at;
+    }
+    if (row.pseudonym) {
+        res.pseudonym = row.pseudonym;
+    }
+    if (row.avatar) {
+        res.avatar = row.avatar;
+    }
+
+    return res;
 }

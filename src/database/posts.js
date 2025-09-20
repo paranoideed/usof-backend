@@ -8,26 +8,26 @@ export default class PostsQ {
 
     New() { return new PostsQ(this.builder.clone()); }
 
-    async insert({ id, user_id, title, content, status, created_at = new Date() }) {
+    async insert({ id, userID, title, content, status, createdAt = new Date() }) {
         const post = {
             id:         id,
-            user_id:    user_id,
+            user_id:    userID,
             title:      title,
             content:    content,
             status:     status,
-            created_at: created_at,
-            updated_at: created_at,
+            created_at: createdAt,
         }
         await this.builder.insert(post);
         return post;
     }
 
-    async update({ title, content, status, updated_at = new Date() }) {
+    async update(set) {
         const setMap = {};
-        if (title !== undefined) setMap.title = title;
-        if (content !== undefined) setMap.content = content;
-        if (status !== undefined) setMap.status = status;
-        if (updated_at !== undefined) setMap.updated_at = updated_at;
+        if (Object.prototype.hasOwnProperty.call(set, "userID")) setMap.user_id = set.userID;
+        if (Object.prototype.hasOwnProperty.call(set, "title")) setMap.title = set.title;
+        if (Object.prototype.hasOwnProperty.call(set, "content")) setMap.content = set.content;
+        if (Object.prototype.hasOwnProperty.call(set, "status")) setMap.status = set.status;
+        setMap.updated_at = Object.prototype.hasOwnProperty.call(set, "updatedAt") ? set.updatedAt : new Date();
 
         await this.builder.update(setMap);
     }
@@ -55,6 +55,24 @@ export default class PostsQ {
     filterUserID(userID) {
         this.builder = this.builder.where("user_id", userID);
         this.counter = this.counter.where("user_id", userID);
+        return this;
+    }
+
+    filterCategoryIDs(categoryIDs) {
+        if (!Array.isArray(categoryIDs) || categoryIDs.length === 0) {
+            return this; // ничего не фильтруем
+        }
+
+        this.builder = this.builder
+            .join({ pc: 'post_categories' }, 'pc.post_id', 'posts.id')
+            .whereIn('pc.category_id', categoryIDs)
+            .groupBy('posts.id');
+
+        this.counter = this.counter
+            .join({ pc: 'post_categories' }, 'pc.post_id', 'posts.id')
+            .whereIn('pc.category_id', categoryIDs)
+            .countDistinct({ cnt: 'posts.id' });
+
         return this;
     }
 
@@ -96,4 +114,19 @@ export default class PostsQ {
         const val = row?.count ?? row?.['count(*)'] ?? Object.values(row ?? { 0: 0 })[0] ?? 0;
         return Number(val);
     }
+}
+
+function toPost(row) {
+    let res = {
+        id:         row.id,
+        userID:     row.user_id,
+        title:      row.title,
+        content:    row.content,
+        status:     row.status,
+        createdAt:  row.created_at,
+    };
+    if (row.updated_at) {
+        res.updatedAt = row.updated_at;
+    }
+    return res;
 }

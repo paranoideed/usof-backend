@@ -11,10 +11,10 @@ export default class PostCategoriesQ {
         return new PostCategoriesQ(this.builder.clone());
     }
 
-    async insert({ post_id, category_id }) {
+    async insert({ postID, categoryID }) {
         const input = {
-            post_id: post_id,
-            category_id: category_id,
+            post_id: postID,
+            category_id: categoryID,
         };
         await this.builder.insert(input);
         return input;
@@ -56,4 +56,18 @@ export default class PostCategoriesQ {
         const val = row?.cnt ?? row?.['count(*)'] ?? Object.values(row ?? { 0: 0 })[0] ?? 0;
         return Number(val);
     }
+}
+
+function toPost(row) {
+    let res = {
+        id:         row.id,
+        userID:    row.user_id,
+        title:      row.title,
+        content:    row.content,
+        createdAt: row.created_at,
+    };
+    if (row.updated_at) {
+        res.updatedAt = row.updated_at;
+    }
+    return res;
 }

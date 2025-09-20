@@ -25,7 +25,7 @@ export class Logger {
             format: winstonFormat.combine(...loggerFormats),
             transports: [
                 new transports.Console(),
-                // new transports.File({ filename: 'app.log' }),
+                // new transports.File({ filename: 'modules.log' }),
             ],
         });
     }

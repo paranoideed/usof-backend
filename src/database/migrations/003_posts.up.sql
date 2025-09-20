@@ -5,7 +5,7 @@ CREATE TABLE posts (
     content    TEXT         NOT NULL,
     status     ENUM('active', 'hidden', 'deleted') NOT NULL DEFAULT 'active',
     created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME     DEFAULT NULL,
 
     FOREIGN KEY (user_id) REFERENCES users(id)
 );

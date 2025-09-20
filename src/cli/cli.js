@@ -1,4 +1,4 @@
-import log from '../logger/logger.js';
+import log from '../utils/logger/logger.js';
 import Migrator from '../database/migrator/migrator.js';
 
 export default class Cli {
