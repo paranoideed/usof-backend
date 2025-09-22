@@ -5,13 +5,13 @@ OUTPUT_DIR    := ./openapi/web
 GEN_DIR       := ./src/generated/openapi
 
 migrate-up:
-	@node index.js migrate up
+	@npx tsx src/index.ts migrate up
 
 migrate-down:
-	@node index.js migrate down
+	@npx tsx src/index.ts migrate down
 
 openapi-gen:
-	@node  openapi-generator-cli generate \
+	@npx tsx penapi-generator-cli generate \
 	-i $(API_BUNDLED) \
 	-g typescript-fetch \
 	-o $(GEN_DIR) \

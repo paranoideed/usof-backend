@@ -3,7 +3,6 @@ server:
   port: ":8000"
   logging:
     level: "debug"
-    format: "text"
 
 jwt:
   secret_key: "suppersecretkey"

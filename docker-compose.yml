@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: usof-mysql
+    restart: unless-stopped
+    ports:
+      - "5678:3306"
+    environment:
+      MYSQL_DATABASE: usof
+      MYSQL_USER: usof
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: rootpassword
+      TZ: "UTC"
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --log-bin-trust-function-creators=1
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uusof", "-ppassword"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - usof_mysql_data:/var/lib/mysql
+
+volumes:
+  usof_mysql_data:

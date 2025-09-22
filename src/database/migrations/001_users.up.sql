@@ -3,7 +3,7 @@ CREATE TABLE users (
     role          ENUM('admin','user') NOT NULL DEFAULT 'user',
     email         VARCHAR(255) UNIQUE NOT NULL,
     username      VARCHAR(255) UNIQUE NOT NULL,
-    pseudonym     VARCHAR(255) UNIQUE,
+    pseudonym     VARCHAR(255),
     avatar        TEXT,
     reputation    INT          DEFAULT 0 NOT NULL,
     password_hash VARCHAR(255) NOT NULL,

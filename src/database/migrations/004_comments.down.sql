@@ -1,3 +1,6 @@
--- DROP INDEX idx_comment_post_id ON comment;
--- DROP INDEX idx_comment_user_id ON comment;
+DROP TRIGGER IF EXISTS trg_comment_likes_ai;
+DROP TRIGGER IF EXISTS trg_comment_likes_au;
+DROP TRIGGER IF EXISTS trg_comment_likes_ad;
+
+DROP TABLE IF EXISTS comment_likes CASCADE;
 DROP TABLE IF EXISTS comments CASCADE;
