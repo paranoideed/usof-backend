@@ -1,16 +1,3 @@
-export class UserNotFoundError extends Error {
-    code: string;
-    status: number;
-
-    constructor(msg = 'User not found') {
-        super(msg);
-        this.code = 'USER_NOT_FOUND';
-        this.status = 404;
-
-        Object.setPrototypeOf(this, UserNotFoundError.prototype);
-    }
-}
-
 export class UserAlreadyExistsError extends Error {
     code: string;
     status: number;
@@ -21,5 +8,18 @@ export class UserAlreadyExistsError extends Error {
         this.status = 409;
 
         Object.setPrototypeOf(this, UserAlreadyExistsError.prototype);
+    }
+}
+
+export class InvalidCredentialsError extends Error {
+    code: string;
+    status: number;
+
+    constructor(msg = 'Invalid credentials') {
+        super(msg);
+        this.code = 'INVALID_CREDENTIALS';
+        this.status = 401;
+
+        Object.setPrototypeOf(this, InvalidCredentialsError.prototype);
     }
 }

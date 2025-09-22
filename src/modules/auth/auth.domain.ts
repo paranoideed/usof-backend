@@ -5,13 +5,14 @@ import {Database} from "../../database/database";
 import TokenManager from "./tokens_manager/manager";
 import PasswordHasher from "./password_hasher/hasher";
 import {LoginInput, RegisterInput, ResetPasswordInput} from "./auth.dto";
-import {UserAlreadyExistsError, UserNotFoundError} from "./auth.errors";
+import {InvalidCredentialsError, UserAlreadyExistsError} from "./auth.errors";
+import {UserNotFoundError} from "../user/user.errors";
 
 export type UserToken = {
     token: string;
 }
 
-export default class UserDomain {
+export class AuthDomain {
     private db:     Database;
     private jwt:    TokenManager;
     private hasher: PasswordHasher;
@@ -54,7 +55,7 @@ export default class UserDomain {
 
         const isValid = await this.hasher.verifyPassword(params.password, user.password_hash);
         if (!isValid) {
-            throw new UserNotFoundError('Invalid credentials');
+            throw new InvalidCredentialsError('Invalid credentials');
         }
 
         const token = this.jwt.createToken(user.id, user.role);
@@ -72,7 +73,7 @@ export default class UserDomain {
 
         const isValid = await this.hasher.verifyPassword(params.oldPassword, user.password_hash);
         if (!isValid) {
-            throw new UserNotFoundError('Invalid old password');
+            throw new InvalidCredentialsError('Invalid old password');
         }
 
         const newHash = await this.hasher.hashPassword(params.newPassword);

@@ -28,7 +28,9 @@ export class CategoriesDomain {
 
     async createCategory(params: CreateCategoryInput): Promise<Category> {
         const existing = await this.db.categories().filterTitle(params.title).get();
-        if (existing) throw new CategoryAlreadyExist('Category with this title already exists');
+        if (existing) {
+            throw new CategoryAlreadyExist('Category with this title already exists');
+        }
 
         const category = await this.db.categories().insert({
             id:          uuid(),
@@ -42,7 +44,9 @@ export class CategoriesDomain {
 
     async updateCategory(id: string, params: UpdateCategoryInput): Promise<Category> {
         const row = await this.db.categories().filterID(id).get();
-        if (!row) throw new CategoryNotFoundError('Category not found');
+        if (!row) {
+            throw new CategoryNotFoundError('Category not found');
+        }
 
         const patch: { title?: string; description?: string | null; updated_at?: Date } = {};
         if (Object.prototype.hasOwnProperty.call(params, 'title'))       patch.title = params.title!;
@@ -52,8 +56,11 @@ export class CategoriesDomain {
         await this.db.categories().filterID(id).update(patch);
 
         const updated = await this.db.categories().filterID(id).get();
+        if (!updated) {
+            throw new CategoryNotFoundError('Category not found after update');
+        }
 
-        return categoryFormat(updated as CategoryRow);
+        return categoryFormat(updated);
     }
 
     async getCategoryByID(params: GetCategoryIdInput): Promise<Category> {
@@ -62,10 +69,17 @@ export class CategoriesDomain {
             throw new CategoryNotFoundError('Category not found');
         }
 
-        return categoryFormat(category as CategoryRow);
+        return categoryFormat(category);
     }
 
-    async listCategories(params: GetCategoriesInput): Promise<{ data: Category[], pagination: paginationResponse }> {
+    async listCategories(params: GetCategoriesInput): Promise<{
+        data: Category[],
+        pagination: {
+            offset: number;
+            limit: number;
+            total: number;
+        }
+    }> {
         const rows = (await this.db.categories().page(params.limit, params.offset).select()) as CategoryRow[];
         const total = await this.db.categories().count();
 

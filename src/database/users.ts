@@ -112,6 +112,13 @@ export default class UsersQ {
         return this;
     }
 
+    filterUsernameLike(substr: string): this {
+        const v = `%${substr}%`;
+        this.builder = this.builder.where('title', 'like', v);
+        this.counter = this.counter.where('title', 'like', v);
+        return this;
+    }
+
     filterRole(role: UserRole): this {
         this.builder = this.builder.where('role', role);
         this.counter = this.counter.where('role', role);
