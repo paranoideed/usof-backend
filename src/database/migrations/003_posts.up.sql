@@ -2,7 +2,7 @@ CREATE TABLE posts (
     id         CHAR(36)     PRIMARY KEY NOT NULL DEFAULT (UUID()),
     user_id    CHAR(36)     NOT NULL, -- author
     title      VARCHAR(255) NOT NULL,
-    status     ENUM('active', 'hidden', 'deleted') NOT NULL DEFAULT 'active',
+    status     ENUM('active', 'inactive', 'hidden') NOT NULL DEFAULT 'active',
 
     content    TEXT         NOT NULL,
     likes      INT          NOT NULL DEFAULT 0,

@@ -1,10 +1,11 @@
 import { Knex } from 'knex';
 
 export type CategoryRow = {
-    id:         string;
-    title:      string;
-    created_at: Date;
-    updated_at: Date | null;
+    id:          string;
+    title:       string;
+    description: string;
+    created_at:  Date;
+    updated_at:  Date | null;
 };
 
 export default class CategoriesQ {
@@ -21,15 +22,17 @@ export default class CategoriesQ {
     }
 
     async insert(params: {
-            id:         string;
-            title:      string;
-            created_at: Date;
+            id:          string;
+            title:       string;
+            description: string;
+            created_at:  Date;
         }): Promise<CategoryRow> {
         const data: CategoryRow = {
-            id:         params.id,
-            title:      params.title,
-            created_at: params.created_at ?? new Date(),
-            updated_at: null,
+            id:          params.id,
+            title:       params.title,
+            description: params.description,
+            created_at:  params.created_at ?? new Date(),
+            updated_at:  null,
         };
 
         await this.builder.clone().insert(data);

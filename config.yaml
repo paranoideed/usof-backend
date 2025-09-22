@@ -5,6 +5,7 @@ server:
     level: "debug"
 
 jwt:
+  ttl: 2678400 # 1 month in seconds
   secret_key: "suppersecretkey"
 
 database:

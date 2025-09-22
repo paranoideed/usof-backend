@@ -1,8 +1,6 @@
 import { Knex } from 'knex';
 
-export const postsTable = 'posts';
-
-export type PostStatus = 'active' | 'hidden' | 'deleted';
+export type PostStatus = 'active' | 'inactive' | 'hidden';
 
 export type PostRow = {
     id:      string;

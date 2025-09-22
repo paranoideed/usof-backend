@@ -1,4 +1,5 @@
 import { Knex } from 'knex';
+
 export type PostReactionType = 'like' | 'dislike';
 
 export type PostLikeRow = {

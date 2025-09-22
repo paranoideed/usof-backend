@@ -20,6 +20,7 @@ interface RawConfig {
     };
     jwt: {
         secret_key: string;
+        ttl: number;
     };
     database: {
         sql: {
@@ -43,6 +44,7 @@ export default class Config {
 
     jwt: {
         secretKey: string;
+        ttl: number;
     };
 
     database: {
@@ -65,6 +67,7 @@ export default class Config {
         };
 
         this.jwt = {
+            ttl:       req(raw.jwt.ttl, 'jwt.ttl'),
             secretKey: req(raw.jwt.secret_key, 'jwt.secret_key'),
         };
 
