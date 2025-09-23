@@ -4,6 +4,10 @@ export const CategoryIdSchema = z.object({
     category_id: z.uuid(), // UUID v4 по умолчанию тоже ок
 });
 
+export const DeleteCategorySchema = z.object({
+    category_id: z.uuid(),
+});
+
 export const CreateCategorySchema = z.object({
     title: z.string().min(1).max(64),
     description: z.string().max(1024)
@@ -22,4 +26,5 @@ export const GetCategoriesSchema = z.object({
 export type CreateCategoryInput = z.infer<typeof CreateCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof UpdateCategorySchema>;
 export type GetCategoriesInput  = z.infer<typeof GetCategoriesSchema>;
-export type GetCategoryIdInput  = z.infer<typeof CategoryIdSchema>;
+export type GetCategoryInput = z.infer<typeof CategoryIdSchema>;
+export type DeleteCategoryInput = z.infer<typeof DeleteCategorySchema>;

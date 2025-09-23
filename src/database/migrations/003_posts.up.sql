@@ -35,39 +35,52 @@ CREATE TABLE post_likes (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- AFTER INSERT
-CREATE TRIGGER trg_post_likes_ai
+CREATE TRIGGER trg_post_likes_after_insert
     AFTER INSERT ON post_likes
     FOR EACH ROW
 BEGIN
     UPDATE posts
-    SET likes    = likes    + (NEW.`type` = 'like'),
-        dislikes = dislikes + (NEW.`type` = 'dislike')
+    SET likes    = likes    + CASE WHEN NEW.type = 'like'    THEN 1 ELSE 0 END,
+        dislikes = dislikes + CASE WHEN NEW.type = 'dislike' THEN 1 ELSE 0 END
     WHERE id = NEW.post_id;
+
+    UPDATE users
+    SET reputation = reputation + CASE WHEN NEW.type = 'like' THEN 1 ELSE -1 END
+    WHERE id = (SELECT p.user_id FROM posts p WHERE p.id = NEW.post_id);
 END;
 
--- AFTER UPDATE (перенос 1 из одного счётчика в другой, если тип поменялся)
-CREATE TRIGGER trg_post_likes_au
+CREATE TRIGGER trg_post_likes_after_update
     AFTER UPDATE ON post_likes
     FOR EACH ROW
 BEGIN
-    IF NEW.`type` <> OLD.`type` THEN
-    UPDATE posts
-    SET likes    = GREATEST(likes    + (NEW.`type` = 'like')    - (OLD.`type` = 'like'),    0),
-        dislikes = GREATEST(dislikes + (NEW.`type` = 'dislike') - (OLD.`type` = 'dislike'), 0)
-    WHERE id = NEW.post_id;
-END IF;
+    IF OLD.type <> NEW.type THEN
+        UPDATE posts
+        SET likes    = GREATEST(likes    + CASE WHEN NEW.type = 'like'    THEN 1 ELSE -1 END, 0),
+            dislikes = GREATEST(dislikes + CASE WHEN NEW.type = 'dislike' THEN 1 ELSE -1 END, 0)
+        WHERE id = NEW.post_id;
+
+        UPDATE users
+        SET reputation = reputation + CASE
+            WHEN OLD.type = 'like'    AND NEW.type = 'dislike' THEN -2
+            WHEN OLD.type = 'dislike' AND NEW.type = 'like'    THEN  2
+            ELSE 0
+        END
+        WHERE id = (SELECT p.user_id FROM posts p WHERE p.id = NEW.post_id);
+    END IF;
 END;
 
--- AFTER DELETE
-CREATE TRIGGER trg_post_likes_ad
+CREATE TRIGGER trg_post_likes_after_delete
     AFTER DELETE ON post_likes
     FOR EACH ROW
 BEGIN
     UPDATE posts
-    SET likes    = GREATEST(likes    - (OLD.`type` = 'like'),    0),
-        dislikes = GREATEST(dislikes - (OLD.`type` = 'dislike'), 0)
+    SET likes    = GREATEST(likes    - CASE WHEN OLD.type = 'like'    THEN 1 ELSE 0 END, 0),
+        dislikes = GREATEST(dislikes - CASE WHEN OLD.type = 'dislike' THEN 1 ELSE 0 END, 0)
     WHERE id = OLD.post_id;
+
+    UPDATE users
+    SET reputation = reputation + CASE WHEN OLD.type = 'like' THEN -1 ELSE 1 END
+    WHERE id = (SELECT p.user_id FROM posts p WHERE p.id = OLD.post_id);
 END;
 
 

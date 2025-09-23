@@ -1,9 +1,8 @@
--- comments (чуть подправлено)
 CREATE TABLE comments (
     id         CHAR(36) PRIMARY KEY NOT NULL DEFAULT (UUID()),
     post_id    CHAR(36) NOT NULL,
     user_id    CHAR(36) NOT NULL,
-    parent_id  CHAR(36) DEFAULT NULL, -- nested comment
+    parent_id  CHAR(36) DEFAULT NULL,
 
     content    VARCHAR(4096) NOT NULL,
     likes      INT           NOT NULL DEFAULT 0,
@@ -33,7 +32,6 @@ CREATE TABLE comment_likes (
     FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE
 );
 
--- AFTER INSERT: инкремент нужного счётчика
 CREATE TRIGGER trg_comment_likes_ai
     AFTER INSERT ON comment_likes
     FOR EACH ROW
@@ -42,22 +40,32 @@ BEGIN
     SET likes    = likes    + (NEW.`type` = 'like'),
         dislikes = dislikes + (NEW.`type` = 'dislike')
     WHERE id = NEW.comment_id;
+
+    UPDATE users
+    SET reputation = reputation + CASE WHEN NEW.`type` = 'like' THEN 1 ELSE -1 END
+    WHERE id = (SELECT c.user_id FROM comments c WHERE c.id = NEW.comment_id);
 END;
 
--- AFTER UPDATE: если тип изменился, переносим единицу между колонками
 CREATE TRIGGER trg_comment_likes_au
     AFTER UPDATE ON comment_likes
     FOR EACH ROW
 BEGIN
     IF NEW.`type` <> OLD.`type` THEN
-    UPDATE comments
-    SET likes    = GREATEST(likes    + (NEW.`type` = 'like')    - (OLD.`type` = 'like'),    0),
-        dislikes = GREATEST(dislikes + (NEW.`type` = 'dislike') - (OLD.`type` = 'dislike'), 0)
-    WHERE id = NEW.comment_id;
-END IF;
+        UPDATE comments
+        SET likes    = GREATEST(likes    + (NEW.`type` = 'like')    - (OLD.`type` = 'like'),    0),
+            dislikes = GREATEST(dislikes + (NEW.`type` = 'dislike') - (OLD.`type` = 'dislike'), 0)
+        WHERE id = NEW.comment_id;
+
+        UPDATE users
+        SET reputation = reputation + CASE
+            WHEN OLD.`type` = 'like'    AND NEW.`type` = 'dislike' THEN -2
+            WHEN OLD.`type` = 'dislike' AND NEW.`type` = 'like'    THEN  2
+            ELSE 0
+        END
+        WHERE id = (SELECT c.user_id FROM comments c WHERE c.id = NEW.comment_id);
+    END IF;
 END;
 
--- AFTER DELETE: декремент соответствующего счётчика
 CREATE TRIGGER trg_comment_likes_ad
     AFTER DELETE ON comment_likes
     FOR EACH ROW
@@ -66,7 +74,10 @@ BEGIN
     SET likes    = GREATEST(likes    - (OLD.`type` = 'like'),    0),
         dislikes = GREATEST(dislikes - (OLD.`type` = 'dislike'), 0)
     WHERE id = OLD.comment_id;
-END;
 
+    UPDATE users
+    SET reputation = reputation + CASE WHEN OLD.`type` = 'like' THEN -1 ELSE 1 END
+    WHERE id = (SELECT c.user_id FROM comments c WHERE c.id = OLD.comment_id);
+END;
 
 CREATE INDEX idx_comment_likes_comment_id ON comment_likes (comment_id);

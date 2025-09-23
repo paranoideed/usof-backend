@@ -217,21 +217,21 @@ function commentFormat(row: CommentRow): Comment {
         id:        row.id,
         postId:    row.post_id,
         userId:    row.user_id,
-        parentId:  row.parent_id,
+        parentId:  row.parent_id || null,
         content:   row.content,
         likes:     row.likes,
         dislikes:  row.dislikes,
         createdAt: row.created_at,
-        updatedAt: row.updated_at,
+        updatedAt: row.updated_at || null,
     };
 }
 
 function commentLikeFormat(row: CommentLikeRow) {
     return {
-        id: row.id,
+        id:        row.id,
         commentId: row.comment_id,
-        userId: row.user_id,
-        type: row.type,
+        userId:    row.user_id,
+        type:      row.type,
         createdAt: row.created_at,
     };
 }

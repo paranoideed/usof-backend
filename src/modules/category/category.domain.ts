@@ -4,18 +4,18 @@ import { Database } from '../../database/database';
 import { CategoryRow } from "../../database/categories";
 import { CategoryAlreadyExist, CategoryNotFoundError } from "../errors";
 import {
-    GetCategoryIdInput,
+    GetCategoryInput,
     CreateCategoryInput,
     UpdateCategoryInput,
-    GetCategoriesInput,
+    GetCategoriesInput, DeleteCategoryInput,
 } from "./category.dto.js";
 
 export type Category = {
-    id: string;
-    title: string;
+    id:          string;
+    title:       string;
     description: string;
-    createdAt: Date;
-    updatedAt: Date | null;
+    createdAt:   Date;
+    updatedAt:   Date | null;
 };
 
 export class CategoriesDomain {
@@ -62,7 +62,7 @@ export class CategoriesDomain {
         return categoryFormat(updated);
     }
 
-    async getCategoryByID(params: GetCategoryIdInput): Promise<Category> {
+    async getCategory(params: GetCategoryInput): Promise<Category> {
         const category = await this.db.categories().filterID(params.category_id).get();
         if (!category) {
             throw new CategoryNotFoundError('Category not found');
@@ -91,13 +91,13 @@ export class CategoriesDomain {
             data: categories,
             pagination: {
                 offset: params.offset,
-                limit: params.limit,
-                total: total,
+                limit:  params.limit,
+                total:  total,
             }
         };
     }
 
-    async deleteCategoryByID(params: GetCategoryIdInput): Promise<void> {
+    async deleteCategory(params: DeleteCategoryInput): Promise<void> {
         const category = await this.db.categories().filterID(params.category_id).get();
         if (!category) {
             throw new CategoryNotFoundError('Category not found');

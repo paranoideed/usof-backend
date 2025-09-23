@@ -251,7 +251,7 @@ function PostFormat(row: PostRow): Post {
         likes:     row.likes,
         dislikes:  row.dislikes,
         createdAt: row.created_at,
-        updatedAt: row.updated_at,
+        updatedAt: row.updated_at || null,
     };
 }
 

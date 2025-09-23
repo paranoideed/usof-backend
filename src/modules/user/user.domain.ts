@@ -91,10 +91,10 @@ function UserProfileFormat(row: UserRow): UserProfile {
     return {
         id:         row.id,
         username:   row.username,
-        pseudonym:  row.pseudonym,
-        avatar:     row.avatar,
+        pseudonym:  row.pseudonym || null,
+        avatar:     row.avatar || null,
         reputation: row.reputation,
         createdAt:  row.created_at,
-        updatedAt:  row.updated_at,
+        updatedAt:  row.updated_at || null,
     };
 }
