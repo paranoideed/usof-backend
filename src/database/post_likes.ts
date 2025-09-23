@@ -23,7 +23,7 @@ export default class PostLikesQ {
         return new PostLikesQ(this.builder.clone());
     }
 
-    async insert(params: {
+    async upsert(params: {
         id:         string;
         post_id:    string;
         user_id:    string;
@@ -38,7 +38,8 @@ export default class PostLikesQ {
             created_at: params.created_at,
         };
 
-        await this.builder.clone().insert(data);
+        await this.builder.clone().upsert(data)
+
         return data;
     }
 

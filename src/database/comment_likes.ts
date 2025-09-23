@@ -1,4 +1,5 @@
 import { Knex } from 'knex';
+import {PostLikeRow, PostReactionType} from "./post_likes";
 
 export type ReactionType = 'like' | 'dislike';
 
@@ -23,22 +24,23 @@ export default class CommentLikesQ {
         return new CommentLikesQ(this.builder.clone());
     }
 
-    async insert(params: {
+    async upsert(params: {
         id:         string;
-        comment_id: string;
+        comment_id:    string;
         user_id:    string;
-        type:       ReactionType;
+        type:       PostReactionType;
         created_at: Date;
     }): Promise<CommentLikeRow> {
         const data: CommentLikeRow = {
             id:         params.id,
-            comment_id: params.comment_id,
+            comment_id:    params.comment_id,
             user_id:    params.user_id,
             type:       params.type,
             created_at: params.created_at,
         };
 
-        await this.builder.clone().insert(data);
+        await this.builder.clone().upsert(data)
+
         return data;
     }
 

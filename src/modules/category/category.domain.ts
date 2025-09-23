@@ -2,14 +2,13 @@ import { v4 as uuid } from 'uuid';
 
 import { Database } from '../../database/database';
 import { CategoryRow } from "../../database/categories";
-import { CategoryAlreadyExist, CategoryNotFoundError } from './category.errors';
+import { CategoryAlreadyExist, CategoryNotFoundError } from "../errors";
 import {
     GetCategoryIdInput,
     CreateCategoryInput,
     UpdateCategoryInput,
     GetCategoriesInput,
 } from "./category.dto.js";
-import {paginationResponse} from "../../utils/pagination/pagination";
 
 export type Category = {
     id: string;

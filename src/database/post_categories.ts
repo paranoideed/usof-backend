@@ -18,16 +18,16 @@ export default class PostCategoriesQ {
         return new PostCategoriesQ(this.builder.clone());
     }
 
-    async insert(params: {
-        post_id: string;
-        category_id: string;
-    }): Promise<PostCategoryRow> {
-        const data: PostCategoryRow = {
-            post_id: params.post_id,
-            category_id: params.category_id,
-        };
+    async insert(params: { post_id: string; category_id: string }[]): Promise<PostCategoryRow[]> {
+        const rows = Array.isArray(params) ? params : [params];
+
+        const data: PostCategoryRow[] = rows.map(row => ({
+            post_id: row.post_id,
+            category_id: row.category_id,
+        }));
 
         await this.builder.clone().insert(data);
+
         return data;
     }
 

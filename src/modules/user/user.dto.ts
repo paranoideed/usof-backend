@@ -53,6 +53,6 @@ export const UpdateProfileSchema = z.object({
     }
 });
 
-export type GetProfileInput = z.infer<typeof GetProfileSchema>;
-export type GetProfilesInput = z.infer<typeof GetProfilesSchema>;
+export type GetProfileInput    = z.infer<typeof GetProfileSchema>;
+export type GetProfilesInput   = z.infer<typeof GetProfilesSchema>;
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;

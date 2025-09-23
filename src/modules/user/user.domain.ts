@@ -1,11 +1,10 @@
-import {Database} from "../../database/database";
 import Config from "../../utils/config/config";
-import {GetProfileInput, GetProfilesInput, UpdateProfileInput} from "./user.dto";
-import {UserNotFoundError} from "./user.errors";
+import {Database} from "../../database/database";
 import {UserRow} from "../../database/users";
-import {paginationResponse} from "../../utils/pagination/pagination";
+import {GetProfileInput, GetProfilesInput, UpdateProfileInput} from "./user.dto";
+import {UserNotFoundError} from "../errors";
 
-type UserProfile = {
+export type UserProfile = {
     id:         string;
     username:   string;
     pseudonym:  string | null;

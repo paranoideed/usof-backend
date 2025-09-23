@@ -58,6 +58,6 @@ export const ResetPassword = z.object({
     }),
 });
 
-export type RegisterInput = z.infer<typeof RegisterSchema>;
-export type LoginInput = z.infer<typeof LoginSchema>;
+export type RegisterInput      = z.infer<typeof RegisterSchema>;
+export type LoginInput         = z.infer<typeof LoginSchema>;
 export type ResetPasswordInput = z.infer<typeof ResetPassword>;

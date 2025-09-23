@@ -5,8 +5,7 @@ import {Database} from "../../database/database";
 import TokenManager from "./tokens_manager/manager";
 import PasswordHasher from "./password_hasher/hasher";
 import {LoginInput, RegisterInput, ResetPasswordInput} from "./auth.dto";
-import {InvalidCredentialsError, UserAlreadyExistsError} from "./auth.errors";
-import {UserNotFoundError} from "../user/user.errors";
+import {InvalidCredentialsError, UserAlreadyExistsError, UserNotFoundError} from "../errors";
 
 export type UserToken = {
     token: string;

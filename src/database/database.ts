@@ -6,6 +6,8 @@ import CommentsQ from './comments';
 import PostCategoriesQ from './post_categories';
 import fs from "fs";
 import path from "path";
+import PostLikesQ from "./post_likes";
+import CommentLikesQ from "./comment_likes";
 
 const MIGRATIONS_DIR = path.resolve(process.cwd(), 'src', 'database', 'migrations');
 
@@ -47,6 +49,10 @@ export class Database {
         return new PostsQ(builder);
     }
 
+    postLikes(builder: Knex.QueryBuilder = this.knex('post_likes')): PostLikesQ {
+        return new PostLikesQ(builder);
+    }
+
     postCategories(builder: Knex.QueryBuilder = this.knex('post_categories')): PostCategoriesQ {
         return new PostCategoriesQ(builder);
     }
@@ -55,20 +61,28 @@ export class Database {
         return new CommentsQ(builder);
     }
 
+    commentLikes(builder: Knex.QueryBuilder = this.knex('comment_likes')): CommentLikesQ {
+        return new CommentLikesQ(builder);
+    }
+
     async transaction<T>(fn: (dbCtx: {
         users: UsersQ;
         categories: CategoriesQ;
         posts: PostsQ;
+        postLikes: PostLikesQ;
         postCategories: PostCategoriesQ;
         comments: CommentsQ;
+        commentLikes: CommentLikesQ;
     }) => Promise<T>): Promise<T> {
         return this.knex.transaction(async trx => {
             const dbCtx = {
                 users: this.users(trx('users')),
                 categories: this.categories(trx('categories')),
                 posts: this.posts(trx('posts')),
+                postLikes: this.postLikes(trx('post_likes')),
                 postCategories: this.postCategories(trx('post_categories')),
                 comments: this.comments(trx('comments')),
+                commentLikes: this.commentLikes(trx('comment_likes')),
             };
             return fn(dbCtx);
         });

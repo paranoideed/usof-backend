@@ -21,5 +21,5 @@ export const GetCategoriesSchema = z.object({
 
 export type CreateCategoryInput = z.infer<typeof CreateCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof UpdateCategorySchema>;
-export type GetCategoriesInput = z.infer<typeof GetCategoriesSchema>;
-export type GetCategoryIdInput = z.infer<typeof CategoryIdSchema>;
+export type GetCategoriesInput  = z.infer<typeof GetCategoriesSchema>;
+export type GetCategoryIdInput  = z.infer<typeof CategoryIdSchema>;
