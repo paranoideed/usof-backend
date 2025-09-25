@@ -61,7 +61,7 @@ export const LikePostSchema = z.object({
     type:         z.enum(['like', 'dislike', 'remove']),
 });
 
-export const ListLikedPostsSchema = z.object({
+export const ListLikesPostsSchema = z.object({
     post_id: z.uuid().optional(),
     user_id: z.uuid().optional(),
     type:    z.enum(['like', 'dislike']).optional(),
@@ -77,4 +77,4 @@ export type UpdatePostInput       = z.infer<typeof UpdatePostSchema>;
 export type DeletePostInput       = z.infer<typeof DeletePostSchema>;
 export type ChangePostStatusInput = z.infer<typeof ChangePostStatusSchema>;
 export type LikePostInput         = z.infer<typeof LikePostSchema>;
-export type ListLikedPostsInput   = z.infer<typeof ListLikedPostsSchema>;
+export type ListLikesPostsInput = z.infer<typeof ListLikesPostsSchema>;

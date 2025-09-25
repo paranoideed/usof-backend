@@ -1,9 +1,10 @@
 import jwt, { JwtPayload, Secret, SignOptions } from "jsonwebtoken";
+import {config} from "../../../utils/config/config";
 
 export interface TokenData {
-    userId: string;
+    sub:  string;
     role: string;
-    exp: number;
+    exp:  number;
 }
 
 export interface TokenManagerConfig {
@@ -27,7 +28,10 @@ export default class TokenManager {
         if (!userId || !role) {
             throw new Error("TokenManager.createToken: userId and role are required");
         }
-        const payload = { userId, role };
+        const payload = {
+            sub:  userId,
+            role: role
+        };
 
         const options: SignOptions = {
             expiresIn: this.expiresIn,
@@ -42,14 +46,14 @@ export default class TokenManager {
 
         const raw = TokenManager.stripBearer(token);
         const decoded = jwt.verify(raw, this.secretKey) as JwtPayload & {
-            userId: string;
+            sub:  string;
             role: string;
         };
 
         return {
-            userId: decoded.userId,
+            sub:  decoded.sub,
             role: decoded.role,
-            exp: decoded.exp as number,
+            exp:  decoded.exp as number,
         };
     }
 
@@ -58,3 +62,5 @@ export default class TokenManager {
         return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
     }
 }
+
+export const tokenManager = new TokenManager(config.jwt);

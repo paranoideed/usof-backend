@@ -18,13 +18,17 @@ export const UpdateCategorySchema = z.object({
     description: z.string().max(1024).nullable().optional()
 });
 
-export const GetCategoriesSchema = z.object({
+export const GetCategorySchema = z.object({
+    category_id: z.uuid(),
+});
+
+export const ListCategoriesSchema = z.object({
     offset: z.coerce.number().int().min(0).default(0),
     limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 export type CreateCategoryInput = z.infer<typeof CreateCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof UpdateCategorySchema>;
-export type GetCategoriesInput  = z.infer<typeof GetCategoriesSchema>;
+export type ListCategoriesInput = z.infer<typeof ListCategoriesSchema>;
 export type GetCategoryInput = z.infer<typeof CategoryIdSchema>;
 export type DeleteCategoryInput = z.infer<typeof DeleteCategorySchema>;

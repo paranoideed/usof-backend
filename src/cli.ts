@@ -1,13 +1,13 @@
-import { Database } from "../database/database";
-import { Logger } from "../utils/logger/logger";
-import Config from "../utils/config/config";
+import { Database } from "./data/database";
+import Config from "./utils/config/config";
+import {App} from "./app";
+import {log} from "./utils/logger/logger";
 
 export default class Cli {
     static async Run(args: string[] = []): Promise<boolean> {
         const [command, subcommand] = args;
 
         const cfg = Config.load("./config.yaml");
-        const log = new Logger(cfg.server.logging.level);
         const db = new Database(cfg.database.sql);
 
         switch (`${command} ${subcommand || ''}`.trim()) {
@@ -25,9 +25,10 @@ export default class Cli {
 
             case 'service run': {
                 // TODO: запуск сервиса
-                await new Promise<void>(() => {
-                    /* вечно «висим» до Ctrl+C */
-                });
+                log.info('Service is running. Press Ctrl+C to stop.');
+                const app = new App();
+                await app.run();
+
                 return true;
             }
 
@@ -45,3 +46,4 @@ export default class Cli {
         return true;
     }
 }
+

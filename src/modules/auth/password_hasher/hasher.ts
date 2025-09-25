@@ -10,3 +10,5 @@ export default class PasswordHasher {
         return bcrypt.compare(password, hash);
     }
 }
+
+export const passwordHasher = new PasswordHasher();

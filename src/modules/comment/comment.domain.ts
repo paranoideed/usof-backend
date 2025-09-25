@@ -1,7 +1,6 @@
 import { v4 as uuid } from 'uuid';
 
-import Config from "../../utils/config/config";
-import {Database} from "../../database/database";
+import {database, Database} from "../../data/database";
 import {
     CreateCommentInput,
     DeleteCommentInput,
@@ -11,9 +10,9 @@ import {
     ListCommentsInput,
     UpdateCommentInput
 } from "./comment.dto";
-import {InitiatorNotFound, ParentCommentNotFoundError, PermissionDeniedError, PostNotFoundError} from "../errors";
-import {CommentRow} from "../../database/comments";
-import {CommentLikeRow} from "../../database/comment_likes";
+import {CommentRow} from "../../data/comments";
+import {CommentLikeRow} from "../../data/comment_likes";
+import {ForbiddenError, NotFoundError, UnauthorizedError} from "../../api/errors";
 
 export type Comment = {
     id:        string;
@@ -28,7 +27,7 @@ export type Comment = {
 }
 
 export type CommentList = {
-    comments: Comment[];
+    data: Comment[];
     pagination: { offset: number; limit: number; total: number };
 }
 
@@ -48,23 +47,23 @@ export type LikesList = {
 export class CommentDomain {
     private db: Database;
 
-    constructor(cfg: Config) {
-        this.db = new Database(cfg.database.sql);
+    constructor() {
+        this.db = database;
     }
 
     private async checkRight(initiatorId: string, postId: string): Promise<void> {
         const initiator = await this.db.users().New().filterID(initiatorId).get();
         if (!initiator) {
-            throw new InitiatorNotFound('User not found');
+            throw new UnauthorizedError('Initiator profile not found');
         }
 
         const comment = await this.db.comments().New().filterID(postId).get();
         if (!comment) {
-            throw new PostNotFoundError('Comment not found');
+            throw new NotFoundError('Comment not found');
         }
 
         if (initiator.id !== comment.user_id && initiator.role !== 'admin') {
-            throw new PermissionDeniedError('Permission denied');
+            throw new ForbiddenError('Permission denied');
         }
     }
 
@@ -72,18 +71,18 @@ export class CommentDomain {
     public async createComment(params: CreateCommentInput): Promise<Comment> {
         const user = await this.db.users().New().filterID(params.user_id).get();
         if (!user) {
-            throw new InitiatorNotFound('User not found');
+            throw new UnauthorizedError('Initiator ser not found');
         }
 
         const post = await this.db.posts().New().filterID(params.post_id).get();
         if (!post) {
-            throw new PostNotFoundError('Post not found');
+            throw new NotFoundError('Post not found');
         }
 
         if (params.parent_id) {
             const parentComment = await this.db.comments().New().filterID(params.parent_id).get();
             if (!parentComment) {
-                throw new ParentCommentNotFoundError('Parent comment not found');
+                throw new NotFoundError('Parent comment not found');
             }
         }
 
@@ -101,7 +100,7 @@ export class CommentDomain {
     public async getComment(params: GetCommentInput): Promise<Comment> {
         const row = await this.db.comments().New().filterID(params.comment_id).get();
         if (!row) {
-            throw new PostNotFoundError('Comment not found');
+            throw new NotFoundError('Comment not found');
         }
         return commentFormat(row);
     }
@@ -122,7 +121,7 @@ export class CommentDomain {
          let rows = await query.page(params.limit, params.offset).select()
 
         return {
-            comments: rows.map(commentFormat),
+            data: rows.map(commentFormat),
             pagination: {
                 offset: params.offset,
                 limit:  params.limit,
@@ -134,11 +133,11 @@ export class CommentDomain {
     public async updateComment(params: UpdateCommentInput): Promise<Comment> {
         const row = await this.db.comments().New().filterID(params.comment_id).get();
         if (!row) {
-            throw new PostNotFoundError('Comment not found');
+            throw new NotFoundError('Comment not found');
         }
 
         if (row.user_id !== params.initiator_id) {
-            throw new PermissionDeniedError('Permission denied');
+            throw new ForbiddenError('Permission denied, only author can update comment');
         }
 
         const now = new Date();
@@ -163,12 +162,12 @@ export class CommentDomain {
     public async likeComment(params: LikeCommentInput): Promise<Comment> {
         const user = await this.db.users().New().filterID(params.initiator_id).get();
         if (!user) {
-            throw new InitiatorNotFound('User not found');
+            throw new NotFoundError('User not found');
         }
 
         const comment = await this.db.comments().New().filterID(params.comment_id).get();
         if (!comment) {
-            throw new PostNotFoundError('Comment not found');
+            throw new NotFoundError('Comment not found');
         }
 
         if (params.type === 'remove') {

@@ -73,11 +73,11 @@ export default class Config {
 
         this.database = {
             sql: {
-                host:     req(raw.database.sql.host, 'database.sql.host'),
-                port:     req(raw.database.sql.port, 'database.sql.port'),
-                user:     req(raw.database.sql.user, 'database.sql.user'),
-                password: req(raw.database.sql.password, 'database.sql.password'),
-                name:     req(raw.database.sql.name, 'database.sql.name'),
+                host:     req(raw.database.sql.host, 'data.sql.host'),
+                port:     req(raw.database.sql.port, 'data.sql.port'),
+                user:     req(raw.database.sql.user, 'data.sql.profile'),
+                password: req(raw.database.sql.password, 'data.sql.password'),
+                name:     req(raw.database.sql.name, 'data.sql.name'),
             },
         };
     }
@@ -99,6 +99,5 @@ export default class Config {
 }
 
 const configPath: string = process.env.KV_VIPER_FILE || './config.yaml';
-const config = Config.load(configPath);
 
-export { config };
+export const config = Config.load(configPath);

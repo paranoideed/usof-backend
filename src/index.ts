@@ -1,5 +1,5 @@
 import { argv, exit } from 'node:process';
-import Cli from './cli/cli'; // расширение .ts не пишем — tsc подставит
+import Cli from './cli'; // расширение .ts не пишем — tsc подставит
 
 async function main(): Promise<void> {
     const args: string[] = argv.slice(2);

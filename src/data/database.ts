@@ -1,15 +1,17 @@
+import fs from "fs";
+import path from "path";
 import knex, { Knex } from 'knex';
+
+import {config} from "../utils/config/config";
 import UsersQ from './users';
 import CategoriesQ from './categories';
 import PostsQ from './posts';
 import CommentsQ from './comments';
 import PostCategoriesQ from './post_categories';
-import fs from "fs";
-import path from "path";
 import PostLikesQ from "./post_likes";
 import CommentLikesQ from "./comment_likes";
 
-const MIGRATIONS_DIR = path.resolve(process.cwd(), 'src', 'database', 'migrations');
+const MIGRATIONS_DIR = path.resolve(process.cwd(), 'src', 'data', 'migrations');
 
 export interface SqlConfig {
     host: string;
@@ -130,3 +132,6 @@ export class Database {
         await this.knex.destroy();
     }
 }
+
+const database = new Database(config.database.sql);
+export {database};

@@ -1,4 +1,5 @@
 import { createLogger, format as winstonFormat, transports, Logger as WinstonLogger } from 'winston';
+import {config} from "../config/config";
 
 export class Logger {
     private logger: WinstonLogger;
@@ -38,3 +39,5 @@ export class Logger {
         this.logger.log(level, message, meta);
     }
 }
+
+export const log = new Logger(config.server.logging.level); // пример создания логгера с уровнем 'debug'

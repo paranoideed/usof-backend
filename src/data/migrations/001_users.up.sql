@@ -1,6 +1,6 @@
 CREATE TABLE users (
     id            CHAR(36)     PRIMARY KEY NOT NULL DEFAULT (UUID()),
-    role          ENUM('admin','user') NOT NULL DEFAULT 'user',
+    role          ENUM('admin','profile') NOT NULL DEFAULT 'profile',
     email         VARCHAR(255) UNIQUE NOT NULL,
     username      VARCHAR(255) UNIQUE NOT NULL,
     pseudonym     VARCHAR(255),

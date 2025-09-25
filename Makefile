@@ -1,4 +1,3 @@
-CONFIG_FILE   := ./config.yaml
 API_SRC       := ./openapi/api.yaml
 API_BUNDLED   := ./openapi/api-bundled.yaml
 OUTPUT_DIR    := ./openapi/web
@@ -18,5 +17,4 @@ openapi-gen:
 	--global-property models,modelDocs=false,apiDocs=false,apis=false,supportingFiles=false
 
 runs-server:
-	KV_VIPER_FILE=$(CONFIG_FILE) \
-	@node index.js service run
+	@npx tsx src/index.ts service run

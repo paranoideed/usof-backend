@@ -1,11 +1,11 @@
 import { v4 as uuid } from 'uuid';
 
-import Config from "../../utils/config/config";
-import {Database} from "../../database/database";
-import TokenManager from "./tokens_manager/manager";
-import PasswordHasher from "./password_hasher/hasher";
+import TokenManager, {tokenManager} from "./tokens_manager/manager";
+import PasswordHasher, {passwordHasher} from "./password_hasher/hasher";
 import {LoginInput, RegisterInput, ResetPasswordInput} from "./auth.dto";
-import {InvalidCredentialsError, UserAlreadyExistsError, UserNotFoundError} from "../errors";
+import {ForbiddenError, UnauthorizedError} from "../../api/errors";
+import {Database, database} from "../../data/database";
+
 
 export type UserToken = {
     token: string;
@@ -16,18 +16,18 @@ export class AuthDomain {
     private jwt:    TokenManager;
     private hasher: PasswordHasher;
 
-    constructor(cfg: Config) {
-        this.db = new Database(cfg.database.sql);
-        this.jwt = new TokenManager(cfg.jwt);
-        this.hasher = new PasswordHasher();
+    constructor() {
+        this.db = database;
+        this.jwt = tokenManager;
+        this.hasher = passwordHasher;
     }
 
     async register(params: RegisterInput): Promise<void> {
         const existing = await this.db.users().filterEmail(params.email).get();
-        if (existing) throw new UserAlreadyExistsError('User with this email already exists');
+        if (existing) throw new ForbiddenError('User with this email already exists');
 
         const existingUsername = await this.db.users().filterUsername(params.username).get();
-        if (existingUsername) throw new UserAlreadyExistsError('User with this username already exists');
+        if (existingUsername) throw new ForbiddenError('User with this username already exists');
 
         const pasHash = await this.hasher.hashPassword(params.password);
         const newUser = await this.db.users().New().insert({
@@ -49,12 +49,12 @@ export class AuthDomain {
         }
 
         if (!user) {
-            throw new UserNotFoundError('Invalid credentials');
+            throw new ForbiddenError('Invalid credentials');
         }
 
         const isValid = await this.hasher.verifyPassword(params.password, user.password_hash);
         if (!isValid) {
-            throw new InvalidCredentialsError('Invalid credentials');
+            throw new ForbiddenError('Invalid credentials');
         }
 
         const token = this.jwt.createToken(user.id, user.role);
@@ -67,12 +67,12 @@ export class AuthDomain {
     async resetPassword(params: ResetPasswordInput): Promise<void> {
         const user = await this.db.users().filterUsername(params.username).filterEmail(params.email).get();
         if (!user) {
-            throw new UserNotFoundError('User not found');
+            throw new UnauthorizedError('User not found');
         }
 
         const isValid = await this.hasher.verifyPassword(params.oldPassword, user.password_hash);
         if (!isValid) {
-            throw new InvalidCredentialsError('Invalid old password');
+            throw new ForbiddenError('Invalid old password');
         }
 
         const newHash = await this.hasher.hashPassword(params.newPassword);

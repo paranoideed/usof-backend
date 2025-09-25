@@ -1,19 +1,18 @@
 import { v4 as uuid } from 'uuid';
 
-import Config from "../../utils/config/config";
-import {Database} from "../../database/database";
-import {PostRow} from "../../database/posts";
+import {database, Database} from "../../data/database";
+import {PostRow} from "../../data/posts";
 import {
     ChangePostStatusInput,
     CreatePostInput,
     DeletePostInput,
     GetPostInput,
-    LikePostInput, ListLikedPostsInput, ListLikedPostsSchema,
+    LikePostInput, ListLikesPostsInput, ListLikesPostsSchema,
     ListPostsInput,
     UpdatePostInput
 } from "./post.dto";
-import {InitiatorNotFound, PermissionDeniedError, PostNotFoundError} from "../errors";
-import {PostLikeRow} from "../../database/post_likes";
+import {PostLikeRow} from "../../data/post_likes";
+import {ConflictError, ForbiddenError, NotFoundError, UnauthorizedError} from "../../api/errors";
 
 export type Post = {
     id:        string;
@@ -41,30 +40,30 @@ export type Like = {
 }
 
 export type LikesList = {
-    likes: Like[];
+    data: Like[];
     pagination: { offset: number; limit: number; total: number };
 }
 
 export class PostDomain {
     private db: Database;
 
-    constructor(cfg: Config) {
-        this.db = new Database(cfg.database.sql);
+    constructor() {
+        this.db = database;
     }
 
     private async checkRight(initiatorId: string, postId: string): Promise<void> {
         const initiator = await this.db.users().New().filterID(initiatorId).get();
         if (!initiator) {
-            throw new InitiatorNotFound('User not found');
+            throw new UnauthorizedError('Initiator profile not found');
         }
 
         const post = await this.db.posts().New().filterID(postId).get();
         if (!post) {
-            throw new PostNotFoundError('Post not found');
+            throw new NotFoundError('Post not found');
         }
 
         if (initiator.id !== post.user_id && initiator.role !== 'admin') {
-            throw new PermissionDeniedError('Permission denied');
+            throw new ForbiddenError('Permission denied');
         }
     }
 
@@ -94,7 +93,7 @@ export class PostDomain {
     async getPost(params: GetPostInput): Promise<Post> {
         const post = await this.db.posts().New().filterID(params.post_id).get();
         if (!post) {
-            throw new PostNotFoundError('Post not found');
+            throw new NotFoundError('Post not found');
         }
 
         return PostFormat(post);
@@ -124,7 +123,7 @@ export class PostDomain {
 
         const updated = await this.db.posts().New().filterID(params.post_id).get();
         if (!updated) {
-            throw new PostNotFoundError('Post not found after update');
+            throw new NotFoundError('Post not found after update');
         }
 
         return PostFormat(updated);
@@ -139,7 +138,7 @@ export class PostDomain {
     async likePost(params: LikePostInput): Promise<Post> {
         let post = await this.db.posts().New().filterID(params.post_id).get();
         if (!post) {
-            throw new PostNotFoundError('Post not found');
+            throw new NotFoundError('Post not found');
         }
 
         if (params.type === 'remove') {
@@ -161,18 +160,18 @@ export class PostDomain {
     async changePostStatus(params: ChangePostStatusInput): Promise<Post> {
         const initiator = await this.db.users().New().filterID(params.initiator_id).get();
         if (!initiator) {
-            throw new InitiatorNotFound('User not found');
+            throw new UnauthorizedError('User not found');
         }
 
         const post = await this.db.posts().New().filterID(params.post_id).get();
         if (!post) {
-            throw new PostNotFoundError('Post not found');
+            throw new NotFoundError('Post not found');
         }
 
         if (initiator.id !== post.user_id && params.status === 'hidden') {
-            throw new PermissionDeniedError('Only admin can hide posts');
+            throw new ConflictError('Only admin can hide posts');
         } else if (initiator.role === 'admin' && params.status !== 'hidden') {
-            throw new PermissionDeniedError('Admin can only set status to hidden');
+            throw new ConflictError('Admin can only set status to hidden');
         }
 
         await this.db.posts().New().filterID(params.post_id).update({
@@ -182,7 +181,7 @@ export class PostDomain {
 
         const updated = await this.db.posts().New().filterID(params.post_id).get();
         if (!updated) {
-            throw new PostNotFoundError('Post not found after status change');
+            throw new NotFoundError('Post not found after status change');
         }
 
         return PostFormat(updated);
@@ -214,7 +213,7 @@ export class PostDomain {
         };
     }
 
-    async listLikedPosts(params: ListLikedPostsInput): Promise<LikesList> {
+    async listLikesPosts(params: ListLikesPostsInput): Promise<LikesList> {
         let query = this.db.postLikes().New();
 
         if (params.post_id) {
@@ -231,7 +230,7 @@ export class PostDomain {
         const rows = await query.page(params.limit, params.offset).select();
 
         return {
-            likes: rows.map(postLikeFormat),
+            data: rows.map(postLikeFormat),
             pagination: {
                 limit: params.limit,
                 offset: params.offset,

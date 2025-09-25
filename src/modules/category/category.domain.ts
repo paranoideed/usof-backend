@@ -1,14 +1,14 @@
 import { v4 as uuid } from 'uuid';
 
-import { Database } from '../../database/database';
-import { CategoryRow } from "../../database/categories";
-import { CategoryAlreadyExist, CategoryNotFoundError } from "../errors";
+import {database, Database} from '../../data/database';
+import { CategoryRow } from "../../data/categories";
 import {
     GetCategoryInput,
     CreateCategoryInput,
     UpdateCategoryInput,
-    GetCategoriesInput, DeleteCategoryInput,
+    ListCategoriesInput, DeleteCategoryInput,
 } from "./category.dto.js";
+import {ForbiddenError, NotFoundError} from "../../api/errors";
 
 export type Category = {
     id:          string;
@@ -18,17 +18,22 @@ export type Category = {
     updatedAt:   Date | null;
 };
 
-export class CategoriesDomain {
+export type CategoryList = {
+    data: Category[];
+    pagination: { offset: number; limit: number; total: number };
+};
+
+export class CategoryDomain {
     private db: Database;
 
-    constructor(db: Database) {
-        this.db = db;
+    constructor() {
+        this.db = database;
     }
 
     async createCategory(params: CreateCategoryInput): Promise<Category> {
         const existing = await this.db.categories().filterTitle(params.title).get();
         if (existing) {
-            throw new CategoryAlreadyExist('Category with this title already exists');
+            throw new ForbiddenError('Category with this title already exists');
         }
 
         const category = await this.db.categories().insert({
@@ -44,7 +49,7 @@ export class CategoriesDomain {
     async updateCategory(id: string, params: UpdateCategoryInput): Promise<Category> {
         const row = await this.db.categories().filterID(id).get();
         if (!row) {
-            throw new CategoryNotFoundError('Category not found');
+            throw new NotFoundError('Category not found');
         }
 
         const patch: { title?: string; description?: string | null; updated_at?: Date } = {};
@@ -56,7 +61,7 @@ export class CategoriesDomain {
 
         const updated = await this.db.categories().filterID(id).get();
         if (!updated) {
-            throw new CategoryNotFoundError('Category not found after update');
+            throw new NotFoundError('Category not found');
         }
 
         return categoryFormat(updated);
@@ -65,20 +70,13 @@ export class CategoriesDomain {
     async getCategory(params: GetCategoryInput): Promise<Category> {
         const category = await this.db.categories().filterID(params.category_id).get();
         if (!category) {
-            throw new CategoryNotFoundError('Category not found');
+            throw new NotFoundError('Category not found');
         }
 
         return categoryFormat(category);
     }
 
-    async listCategories(params: GetCategoriesInput): Promise<{
-        data: Category[],
-        pagination: {
-            offset: number;
-            limit: number;
-            total: number;
-        }
-    }> {
+    async listCategories(params: ListCategoriesInput): Promise<CategoryList> {
         const rows = (await this.db.categories().page(params.limit, params.offset).select()) as CategoryRow[];
         const total = await this.db.categories().count();
 
@@ -100,7 +98,7 @@ export class CategoriesDomain {
     async deleteCategory(params: DeleteCategoryInput): Promise<void> {
         const category = await this.db.categories().filterID(params.category_id).get();
         if (!category) {
-            throw new CategoryNotFoundError('Category not found');
+            throw new NotFoundError('Category not found');
         }
 
         await this.db.categories().filterID(params.category_id).delete();

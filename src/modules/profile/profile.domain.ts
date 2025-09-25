@@ -1,10 +1,9 @@
-import Config from "../../utils/config/config";
-import {Database} from "../../database/database";
-import {UserRow} from "../../database/users";
-import {GetProfileInput, GetProfilesInput, UpdateProfileInput} from "./user.dto";
-import {UserNotFoundError} from "../errors";
+import {database, Database} from "../../data/database";
+import {UserRow} from "../../data/users";
+import {GetProfileInput, GetProfilesInput, UpdateProfileInput} from "./profile.dto";
+import {NotFoundError} from "../../api/errors";
 
-export type UserProfile = {
+export type Profile = {
     id:         string;
     username:   string;
     pseudonym:  string | null;
@@ -14,14 +13,23 @@ export type UserProfile = {
     updatedAt:  Date | null;
 };
 
-export class UserDomain {
+export type ProfileList = {
+    data: Profile[];
+    pagination: {
+        offset: number;
+        limit:  number;
+        total:  number;
+    };
+}
+
+export class ProfileDomain {
     private db: Database;
 
-    constructor(cfg: Config) {
-        this.db = new Database(cfg.database.sql);
+    constructor() {
+        this.db = database;
     }
 
-    async getProfile(params: GetProfileInput): Promise<UserProfile> {
+    async getProfile(params: GetProfileInput): Promise<Profile> {
         let user
         if (params.user_id) {
             user = await this.db.users().New().filterID(params.user_id).get();
@@ -32,20 +40,13 @@ export class UserDomain {
         }
 
         if (!user) {
-            throw new UserNotFoundError('User not found');
+            throw new NotFoundError('User not found');
         }
 
         return UserProfileFormat(user);
     }
 
-    async listProfiles(params: GetProfilesInput): Promise<{
-        users: UserProfile[];
-        pagination: {
-            offset: number;
-            limit: number;
-            total: number;
-        }
-    }> {
+    async listProfiles(params: GetProfilesInput): Promise<ProfileList> {
         const query = this.db.users().New();
         if (params.username && params.username.trim() !== '') {
             query.filterUsernameLike(`%${params.username.trim()}%`);
@@ -55,7 +56,7 @@ export class UserDomain {
         const rows = await query.page(params.limit, params.offset).select();
 
         return {
-            users: rows.map(UserProfileFormat),
+            data: rows.map(UserProfileFormat),
             pagination: {
                 limit: params.limit,
                 offset: params.offset,
@@ -64,10 +65,10 @@ export class UserDomain {
         };
     }
 
-    async updateProfile(params: UpdateProfileInput): Promise<UserProfile> {
+    async updateProfile(params: UpdateProfileInput): Promise<Profile> {
         const user = await this.db.users().New().filterID(params.user_id).get();
         if (!user) {
-            throw new UserNotFoundError('User not found');
+            throw new NotFoundError('User not found');
         }
 
         const patch: { username?: string; pseudonym?: string | null; avatar?: string | null; updated_at?: Date } = {};
@@ -80,14 +81,14 @@ export class UserDomain {
 
         const updated = await this.db.users().New().filterID(params.user_id).get();
         if (!updated) {
-            throw new UserNotFoundError('User not found after update');
+            throw new NotFoundError('User not found after update');
         }
 
         return UserProfileFormat(updated);
     }
 }
 
-function UserProfileFormat(row: UserRow): UserProfile {
+function UserProfileFormat(row: UserRow): Profile {
     return {
         id:         row.id,
         username:   row.username,
