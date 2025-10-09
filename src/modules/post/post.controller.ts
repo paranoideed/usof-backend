@@ -11,6 +11,7 @@ import {
     ListPostsSchema,
     UpdatePostSchema
 } from "./post.dto";
+import {log} from "../../utils/logger/logger";
 
 class PostController {
     private domain: PostDomain;
@@ -30,13 +31,18 @@ class PostController {
 
         const parsed = CreatePostSchema.safeParse(candidate);
         if (!parsed.success) {
+            log.error("Validation error in createPost", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
         try {
             const post = await this.domain.createPost(parsed.data);
+
             return res.status(201).json(post);
         } catch (err) {
+            log.error("Error in createPost", { error: err });
+
             next(err);
         }
     }
@@ -48,16 +54,18 @@ class PostController {
 
         const parsed = z.object({ post_id: z.string().uuid() }).safeParse(candidate);
         if (!parsed.success) {
+            log.error("Validation error in getPost", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
         try {
             const post = await this.domain.getPost(parsed.data);
-            if (!post) {
-                return res.status(404).json({ message: "Post not found" });
-            }
+
             return res.status(200).json(post);
         } catch (err) {
+            log.error("Error in getPost", { error: err });
+
             next(err);
         }
     }
@@ -73,6 +81,8 @@ class PostController {
 
         const parsed = ListPostsSchema.safeParse(candidate);
         if (!parsed.success) {
+            log.error("Validation error in listPosts", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
@@ -80,6 +90,8 @@ class PostController {
             const posts = await this.domain.listPosts(parsed.data);
             return res.status(200).json(posts);
         } catch (err) {
+            log.error("Error in listPosts", { error: err });
+
             next(err);
         }
     }
@@ -97,13 +109,18 @@ class PostController {
         const parsed = UpdatePostSchema.safeParse(candidate);
 
         if (!parsed.success) {
+            log.error("Validation error in updatePost", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
         try {
             const post = await this.domain.updatePost(parsed.data);
+
             return res.status(200).json(post);
         } catch (err) {
+            log.error("Error in updatePost", { error: err });
+
             next(err);
         }
     }
@@ -116,13 +133,18 @@ class PostController {
 
         const parsed = DeletePostSchema.safeParse(candidate);
         if (!parsed.success) {
+            log.error("Validation error in deletePost", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
         try {
             await this.domain.deletePost(parsed.data);
+
             return res.status(204).send();
         } catch (err) {
+            log.error("Error in deletePost", { error: err });
+
             next(err);
         }
     }
@@ -136,6 +158,8 @@ class PostController {
 
         const parsed = LikePostSchema.safeParse(candidate);
         if (!parsed.success) {
+            log.error("Validation error in like", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
@@ -143,6 +167,8 @@ class PostController {
             const post = await this.domain.likePost(parsed.data);
             return res.status(200).json(post);
         } catch (err) {
+            log.error("Error in like", { error: err });
+
             next(err);
         }
     }
@@ -156,13 +182,18 @@ class PostController {
 
         const parsed = ListLikesPostsSchema.safeParse(candidate);
         if (!parsed.success) {
+            log.error("Validation error in ListLikes", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
         try {
             const likes = await this.domain.listLikesPosts(parsed.data);
+
             return res.status(200).json(likes);
         } catch (err) {
+            log.error("Error in ListLikes", { error: err });
+
             next(err);
         }
     }

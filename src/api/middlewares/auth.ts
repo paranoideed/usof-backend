@@ -1,9 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { UnauthorizedError, ForbiddenError } from "../errors";
-import TokenManager from "../../modules/auth/tokens_manager/manager";
-import {config} from "../../utils/config/config";
-
-const JwtService = new TokenManager(config.jwt)
+import tokenManager from "../../modules/auth/tokens_manager/manager";
 
 declare global {
     namespace Express {
@@ -37,7 +34,7 @@ export function authMiddleware(
             throw new UnauthorizedError("No access token provided");
         }
 
-        const payload = JwtService.verifyToken(token);
+        const payload = tokenManager.verifyToken(token);
         req.user = {
             id:   payload.sub,
             role: payload.role

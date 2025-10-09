@@ -1,11 +1,11 @@
 import { v4 as uuid } from 'uuid';
 
-import TokenManager, {tokenManager} from "./tokens_manager/manager";
-import PasswordHasher, {passwordHasher} from "./password_hasher/hasher";
-import {LoginInput, RegisterInput, ResetPasswordInput} from "./auth.dto";
-import {ForbiddenError, UnauthorizedError} from "../../api/errors";
+import {ConflictError, ForbiddenError, UnauthorizedError} from "../../api/errors";
 import {Database, database} from "../../data/database";
 
+import tokenManager, {TokenManager} from "./tokens_manager/manager";
+import passwordHasher, {PasswordHasher} from "./password_hasher/hasher";
+import {LoginInput, RegisterInput, ResetPasswordInput} from "./auth.dto";
 
 export type UserToken = {
     token: string;
@@ -24,13 +24,14 @@ export class AuthDomain {
 
     async register(params: RegisterInput): Promise<void> {
         const existing = await this.db.users().filterEmail(params.email).get();
-        if (existing) throw new ForbiddenError('User with this email already exists');
+        if (existing) throw new ConflictError('User with this email already exists');
 
         const existingUsername = await this.db.users().filterUsername(params.username).get();
-        if (existingUsername) throw new ForbiddenError('User with this username already exists');
+        if (existingUsername) throw new ConflictError('User with this username already exists');
 
         const pasHash = await this.hasher.hashPassword(params.password);
-        const newUser = await this.db.users().New().insert({
+
+        await this.db.users().insert({
             id:            uuid(),
             role:          params.role,
             email:         params.email,
@@ -76,6 +77,7 @@ export class AuthDomain {
         }
 
         const newHash = await this.hasher.hashPassword(params.newPassword);
+
         await this.db.users().filterID(user.id).update({
             password_hash: newHash,
             updated_at: new Date(),

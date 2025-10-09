@@ -52,12 +52,12 @@ export class CommentDomain {
     }
 
     private async checkRight(initiatorId: string, postId: string): Promise<void> {
-        const initiator = await this.db.users().New().filterID(initiatorId).get();
+        const initiator = await this.db.users().filterID(initiatorId).get();
         if (!initiator) {
             throw new UnauthorizedError('Initiator profile not found');
         }
 
-        const comment = await this.db.comments().New().filterID(postId).get();
+        const comment = await this.db.comments().filterID(postId).get();
         if (!comment) {
             throw new NotFoundError('Comment not found');
         }
@@ -69,24 +69,24 @@ export class CommentDomain {
 
 
     public async createComment(params: CreateCommentInput): Promise<Comment> {
-        const user = await this.db.users().New().filterID(params.user_id).get();
+        const user = await this.db.users().filterID(params.user_id).get();
         if (!user) {
             throw new UnauthorizedError('Initiator ser not found');
         }
 
-        const post = await this.db.posts().New().filterID(params.post_id).get();
+        const post = await this.db.posts().filterID(params.post_id).get();
         if (!post) {
             throw new NotFoundError('Post not found');
         }
 
         if (params.parent_id) {
-            const parentComment = await this.db.comments().New().filterID(params.parent_id).get();
+            const parentComment = await this.db.comments().filterID(params.parent_id).get();
             if (!parentComment) {
                 throw new NotFoundError('Parent comment not found');
             }
         }
 
-        const row = await this.db.comments().New().insert({
+        const row = await this.db.comments().insert({
             id:         uuid(),
             post_id:    params.post_id,
             user_id:    params.user_id,
@@ -98,7 +98,7 @@ export class CommentDomain {
     }
 
     public async getComment(params: GetCommentInput): Promise<Comment> {
-        const row = await this.db.comments().New().filterID(params.comment_id).get();
+        const row = await this.db.comments().filterID(params.comment_id).get();
         if (!row) {
             throw new NotFoundError('Comment not found');
         }
@@ -106,7 +106,7 @@ export class CommentDomain {
     }
 
     public async listComments(params: ListCommentsInput): Promise<CommentList> {
-        let query = this.db.comments().New();
+        let query = this.db.comments();
         if (params.post_id) {
             query = query.filterPostID(params.post_id);
         }
@@ -131,7 +131,7 @@ export class CommentDomain {
     }
 
     public async updateComment(params: UpdateCommentInput): Promise<Comment> {
-        const row = await this.db.comments().New().filterID(params.comment_id).get();
+        const row = await this.db.comments().filterID(params.comment_id).get();
         if (!row) {
             throw new NotFoundError('Comment not found');
         }
@@ -142,7 +142,7 @@ export class CommentDomain {
 
         const now = new Date();
 
-        await this.db.comments().New().filterID(params.comment_id).update({
+        await this.db.comments().filterID(params.comment_id).update({
             content:    params.content,
             updated_at: now,
         });
@@ -156,24 +156,24 @@ export class CommentDomain {
     public async deleteComment(params: DeleteCommentInput): Promise<void> {
         await this.checkRight(params.initiator_id, params.comment_id);
 
-        await this.db.comments().New().filterID(params.comment_id).delete();
+        await this.db.comments().filterID(params.comment_id).delete();
     }
 
     public async likeComment(params: LikeCommentInput): Promise<Comment> {
-        const user = await this.db.users().New().filterID(params.initiator_id).get();
+        const user = await this.db.users().filterID(params.initiator_id).get();
         if (!user) {
             throw new NotFoundError('User not found');
         }
 
-        const comment = await this.db.comments().New().filterID(params.comment_id).get();
+        const comment = await this.db.comments().filterID(params.comment_id).get();
         if (!comment) {
             throw new NotFoundError('Comment not found');
         }
 
         if (params.type === 'remove') {
-            await this.db.commentLikes().New().filterCommentID(params.comment_id).filterUserID(params.initiator_id).delete();
+            await this.db.commentLikes().filterCommentID(params.comment_id).filterUserID(params.initiator_id).delete();
         } else {
-            await this.db.commentLikes().New().upsert({
+            await this.db.commentLikes().upsert({
                 id:         uuid(),
                 comment_id: params.comment_id,
                 user_id:    params.initiator_id,
@@ -186,7 +186,7 @@ export class CommentDomain {
     }
 
     public async listCommentLikes(params: ListCommentLikesInput): Promise<LikesList> {
-        let query = this.db.commentLikes().New();
+        let query = this.db.commentLikes();
         if (params.comment_id) {
             query = query.filterCommentID(params.comment_id);
         }

@@ -52,12 +52,12 @@ export class PostDomain {
     }
 
     private async checkRight(initiatorId: string, postId: string): Promise<void> {
-        const initiator = await this.db.users().New().filterID(initiatorId).get();
+        const initiator = await this.db.users().filterID(initiatorId).get();
         if (!initiator) {
             throw new UnauthorizedError('Initiator profile not found');
         }
 
-        const post = await this.db.posts().New().filterID(postId).get();
+        const post = await this.db.posts().filterID(postId).get();
         if (!post) {
             throw new NotFoundError('Post not found');
         }
@@ -70,7 +70,7 @@ export class PostDomain {
     async createPost(params: CreatePostInput): Promise<Post> {
         const postId = uuid();
 
-        const newPost = await this.db.posts().New().insert({
+        const newPost = await this.db.posts().insert({
             id:        postId,
             user_id:   params.user_id,
             title:     params.title,
@@ -91,7 +91,7 @@ export class PostDomain {
     }
 
     async getPost(params: GetPostInput): Promise<Post> {
-        const post = await this.db.posts().New().filterID(params.post_id).get();
+        const post = await this.db.posts().filterID(params.post_id).get();
         if (!post) {
             throw new NotFoundError('Post not found');
         }
@@ -107,10 +107,10 @@ export class PostDomain {
         if (Object.prototype.hasOwnProperty.call(params, 'content')) patch.content = params.content!;
         patch.updated_at = new Date();
 
-        await this.db.posts().New().filterID(params.post_id).update(patch);
+        await this.db.posts().filterID(params.post_id).update(patch);
 
         if (params.categories) {
-            await this.db.postCategories().New().filterPostID(params.post_id).delete();
+            await this.db.postCategories().filterPostID(params.post_id).delete();
 
             if (params.categories.length > 0) {
                 const categoryLinks = params.categories.map((categoryId) => ({
@@ -121,7 +121,7 @@ export class PostDomain {
             }
         }
 
-        const updated = await this.db.posts().New().filterID(params.post_id).get();
+        const updated = await this.db.posts().filterID(params.post_id).get();
         if (!updated) {
             throw new NotFoundError('Post not found after update');
         }
@@ -132,19 +132,19 @@ export class PostDomain {
     async deletePost(params: DeletePostInput): Promise<void> {
         await this.checkRight(params.initiator_id, params.post_id);
 
-        await this.db.posts().New().filterID(params.post_id).delete();
+        await this.db.posts().filterID(params.post_id).delete();
     }
 
     async likePost(params: LikePostInput): Promise<Post> {
-        let post = await this.db.posts().New().filterID(params.post_id).get();
+        let post = await this.db.posts().filterID(params.post_id).get();
         if (!post) {
             throw new NotFoundError('Post not found');
         }
 
         if (params.type === 'remove') {
-            await this.db.postLikes().New().filterPostID(params.post_id).filterUserID(params.initiator_id).delete();
+            await this.db.postLikes().filterPostID(params.post_id).filterUserID(params.initiator_id).delete();
         } else {
-             await this.db.postLikes().New().upsert({
+             await this.db.postLikes().upsert({
                     id:         uuid(),
                     post_id:    params.post_id,
                     user_id:    params.initiator_id,
@@ -158,12 +158,12 @@ export class PostDomain {
     }
 
     async changePostStatus(params: ChangePostStatusInput): Promise<Post> {
-        const initiator = await this.db.users().New().filterID(params.initiator_id).get();
+        const initiator = await this.db.users().filterID(params.initiator_id).get();
         if (!initiator) {
             throw new UnauthorizedError('User not found');
         }
 
-        const post = await this.db.posts().New().filterID(params.post_id).get();
+        const post = await this.db.posts().filterID(params.post_id).get();
         if (!post) {
             throw new NotFoundError('Post not found');
         }
@@ -174,12 +174,12 @@ export class PostDomain {
             throw new ConflictError('Admin can only set status to hidden');
         }
 
-        await this.db.posts().New().filterID(params.post_id).update({
+        await this.db.posts().filterID(params.post_id).update({
             status:     params.status,
             updated_at: new Date(),
         });
 
-        const updated = await this.db.posts().New().filterID(params.post_id).get();
+        const updated = await this.db.posts().filterID(params.post_id).get();
         if (!updated) {
             throw new NotFoundError('Post not found after status change');
         }
@@ -188,7 +188,7 @@ export class PostDomain {
     }
 
     async listPosts(params: ListPostsInput): Promise<PostsList> {
-        let query = this.db.posts().New();
+        let query = this.db.posts();
 
         if (params.user_id) {
             query = query.filterUserID(params.user_id);
@@ -214,7 +214,7 @@ export class PostDomain {
     }
 
     async listLikesPosts(params: ListLikesPostsInput): Promise<LikesList> {
-        let query = this.db.postLikes().New();
+        let query = this.db.postLikes();
 
         if (params.post_id) {
             query = query.filterPostID(params.post_id);

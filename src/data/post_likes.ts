@@ -19,10 +19,6 @@ export default class PostLikesQ {
         this.counter = builder.clone();
     }
 
-    New(): PostLikesQ {
-        return new PostLikesQ(this.builder.clone());
-    }
-
     async upsert(params: {
         id:         string;
         post_id:    string;

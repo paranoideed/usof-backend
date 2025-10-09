@@ -35,7 +35,7 @@ authRouter.post(
 )
 
 authRouter.post(
-    "/reset-reset",
+    "/reset-password",
     (req: Request, res: Response, next: NextFunction) =>
         authController.resetPassword(req, res, next)
 );

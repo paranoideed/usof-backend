@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 
-export default class PasswordHasher {
+export class PasswordHasher {
     async hashPassword(password: string): Promise<string> {
         const saltRounds = 12;
         return bcrypt.hash(password, saltRounds);
@@ -11,4 +11,5 @@ export default class PasswordHasher {
     }
 }
 
-export const passwordHasher = new PasswordHasher();
+const passwordHasher = new PasswordHasher();
+export default passwordHasher;

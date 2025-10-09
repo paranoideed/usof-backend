@@ -17,10 +17,6 @@ export default class CategoriesQ {
         this.counter = builder.clone();
     }
 
-    New(): CategoriesQ {
-        return new CategoriesQ(this.builder.clone());
-    }
-
     async insert(params: {
             id:          string;
             title:       string;
@@ -49,20 +45,19 @@ export default class CategoriesQ {
         return rows ?? [];
     }
 
-    async update(set: {
-        title?:      string;
-        updated_at?: Date;
+    async update(params: {
+        title?:      string | null;
+        description?: string | null;
     }): Promise<void> {
         const setMap: Partial<CategoryRow> = {};
-        if (Object.prototype.hasOwnProperty.call(set, 'title')) {
-            setMap.title = set.title!;
+        if (Object.prototype.hasOwnProperty.call(params, 'title')) {
+            setMap.title = params.title!;
+        }
+        if (Object.prototype.hasOwnProperty.call(params, 'description')) {
+            setMap.description = params.description!;
         }
 
-        if (Object.prototype.hasOwnProperty.call(set, 'updated_at')) {
-            setMap.updated_at = set.updated_at!;
-        } else {
-            setMap.updated_at = new Date();
-        }
+        setMap.updated_at = new Date();
 
         await this.builder.clone().update(setMap);
     }

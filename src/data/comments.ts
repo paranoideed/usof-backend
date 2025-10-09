@@ -23,10 +23,6 @@ export default class CommentsQ {
         this.counter = builder.clone();
     }
 
-    New(): CommentsQ {
-        return new CommentsQ(this.builder.clone());
-    }
-
     async insert(params: {
         id:          string;
         post_id:     string;

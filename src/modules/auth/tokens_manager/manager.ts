@@ -12,7 +12,7 @@ export interface TokenManagerConfig {
     ttl:       number;
 }
 
-export default class TokenManager {
+export class TokenManager {
     private readonly secretKey: Secret;
     private readonly expiresIn: SignOptions["expiresIn"];
 
@@ -63,4 +63,5 @@ export default class TokenManager {
     }
 }
 
-export const tokenManager = new TokenManager(config.jwt);
+const tokenManager = new TokenManager(config.jwt);
+export default tokenManager;

@@ -14,6 +14,7 @@ export const CreateCategorySchema = z.object({
 });
 
 export const UpdateCategorySchema = z.object({
+    category_id: z.uuid(),
     title: z.string().min(1).max(64).optional(),
     description: z.string().max(1024).nullable().optional()
 });

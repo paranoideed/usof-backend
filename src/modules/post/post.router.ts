@@ -15,6 +15,13 @@ postRouter.post(
 );
 
 postRouter.get(
+    "/",
+    async (req: Request, res: Response, next: NextFunction) => {
+        await postController.listPosts(req, res, next);
+    }
+);
+
+postRouter.get(
     "/:post_id",
     async (req, res, next) => {
         await postController.getPost(req, res, next);

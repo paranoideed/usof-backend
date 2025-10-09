@@ -14,10 +14,6 @@ export default class PostCategoriesQ {
         this.counter = builder.clone();
     }
 
-    New(): PostCategoriesQ {
-        return new PostCategoriesQ(this.builder.clone());
-    }
-
     async insert(params: { post_id: string; category_id: string }[]): Promise<PostCategoryRow[]> {
         const rows = Array.isArray(params) ? params : [params];
 

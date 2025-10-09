@@ -16,8 +16,23 @@ profileRouter.get(
     }
 );
 
+profileRouter.post(
+    "/me",
+    authMiddleware,
+    async (req: Request, res: Response, next: NextFunction) => {
+        await profileController.updateProfile(req, res, next);
+    }
+);
+
 profileRouter.get(
-    "/:user_id",
+    "/id/:user_id",
+    async (req: Request, res: Response, next: NextFunction) => {
+        await profileController.getProfile(req, res, next);
+    }
+);
+
+profileRouter.get(
+    "/username/:username",
     async (req: Request, res: Response, next: NextFunction) => {
         await profileController.getProfile(req, res, next);
     }

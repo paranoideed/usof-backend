@@ -29,9 +29,7 @@ export const GetProfileSchema = z.object({
 });
 
 export const GetProfilesSchema = z.object({
-    username: z.string().min(3).max(32).regex(/^[a-zA-Z0-9\-._!]+$/, {
-        message: "Username can only contain letters, numbers, and -._!",
-    }).optional(),
+    username: z.string().optional(),
     offset:   z.coerce.number().int().min(0).default(0),
     limit:    z.coerce.number().int().min(1).max(100).default(20),
 });

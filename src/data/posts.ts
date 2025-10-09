@@ -25,10 +25,6 @@ export default class PostsQ {
         this.counter = builder.clone();
     }
 
-    New(): PostsQ {
-        return new PostsQ(this.builder.clone());
-    }
-
     async insert(params: {
         id:         string;
         user_id:    string;

@@ -20,10 +20,6 @@ export default class CommentLikesQ {
         this.counter = builder.clone();
     }
 
-    New(): CommentLikesQ {
-        return new CommentLikesQ(this.builder.clone());
-    }
-
     async upsert(params: {
         id:         string;
         comment_id:    string;

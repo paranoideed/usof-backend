@@ -32,22 +32,22 @@ export class ProfileDomain {
     async getProfile(params: GetProfileInput): Promise<Profile> {
         let user
         if (params.user_id) {
-            user = await this.db.users().New().filterID(params.user_id).get();
+            user = await this.db.users().filterID(params.user_id).get();
         } else if (params.username) {
-            user = await this.db.users().New().filterUsername(params.username).get();
+            user = await this.db.users().filterUsername(params.username).get();
         } else if (params.email) {
-            user = await this.db.users().New().filterEmail(params.email).get();
+            user = await this.db.users().filterEmail(params.email).get();
         }
 
         if (!user) {
             throw new NotFoundError('User not found');
         }
 
-        return UserProfileFormat(user);
+        return userProfileFormat(user);
     }
 
     async listProfiles(params: GetProfilesInput): Promise<ProfileList> {
-        const query = this.db.users().New();
+        const query = this.db.users();
         if (params.username && params.username.trim() !== '') {
             query.filterUsernameLike(`%${params.username.trim()}%`);
         }
@@ -56,39 +56,39 @@ export class ProfileDomain {
         const rows = await query.page(params.limit, params.offset).select();
 
         return {
-            data: rows.map(UserProfileFormat),
+            data: rows.map(userProfileFormat),
             pagination: {
-                limit: params.limit,
+                limit:  params.limit,
                 offset: params.offset,
-                total: total,
+                total:  total,
             },
         };
     }
 
     async updateProfile(params: UpdateProfileInput): Promise<Profile> {
-        const user = await this.db.users().New().filterID(params.user_id).get();
+        const user = await this.db.users().filterID(params.user_id).get();
         if (!user) {
             throw new NotFoundError('User not found');
         }
 
-        const patch: { username?: string; pseudonym?: string | null; avatar?: string | null; updated_at?: Date } = {};
+        const patch: { username?: string; pseudonym?: string | null ; avatar?: string | null ; updated_at?: Date } = {};
         if (Object.prototype.hasOwnProperty.call(params, 'username'))  patch.username = params.username!;
-        if (Object.prototype.hasOwnProperty.call(params, 'pseudonym')) patch.pseudonym = params.pseudonym === undefined ? user.pseudonym : params.pseudonym;
-        if (Object.prototype.hasOwnProperty.call(params, 'avatar'))    patch.avatar = params.avatar === undefined ? user.avatar : params.avatar;
+        if (Object.prototype.hasOwnProperty.call(params, 'pseudonym')) patch.pseudonym = params.pseudonym;
+        if (Object.prototype.hasOwnProperty.call(params, 'avatar'))    patch.avatar = params.avatar;
         patch.updated_at = new Date();
 
-        await this.db.users().New().filterID(params.user_id).update(patch);
+        await this.db.users().filterID(params.user_id).update(patch);
 
-        const updated = await this.db.users().New().filterID(params.user_id).get();
+        const updated = await this.db.users().filterID(params.user_id).get();
         if (!updated) {
             throw new NotFoundError('User not found after update');
         }
 
-        return UserProfileFormat(updated);
+        return userProfileFormat(updated);
     }
 }
 
-function UserProfileFormat(row: UserRow): Profile {
+function userProfileFormat(row: UserRow): Profile {
     return {
         id:         row.id,
         username:   row.username,

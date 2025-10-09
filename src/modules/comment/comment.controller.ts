@@ -10,6 +10,7 @@ import {
     ListCommentsSchema,
     UpdateCommentSchema
 } from "./comment.dto";
+import {log} from "../../utils/logger/logger";
 
 class CommentController {
     private domain: CommentDomain;
@@ -29,6 +30,8 @@ class CommentController {
 
         const parsed = CreateCommentSchema.safeParse(candidate);
         if (!parsed.success) {
+            log.error("Validation error in createComment", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
@@ -38,6 +41,8 @@ class CommentController {
             return res.status(201).json(comment);
         }
         catch (err) {
+            log.error("Error in createComment", { error: err });
+
             next(err);
         }
     }
@@ -45,18 +50,19 @@ class CommentController {
     async getComment(req: Request, res: Response, next: NextFunction) {
         const parsed = GetCommentSchema.safeParse(req.params);
         if (!parsed.success) {
+            log.error("Validation error in getComment", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
         try {
             const comment = await this.domain.getComment(parsed.data);
-            if (!comment) {
-                return res.status(404).json({ message: "Comment not found" });
-            }
 
             return res.status(200).json(comment);
         }
         catch (err) {
+            log.error("Error in getComment", { error: err });
+
             next(err);
         }
     }
@@ -64,6 +70,8 @@ class CommentController {
     async listComments(req: Request, res: Response, next: NextFunction) {
         const parsed = ListCommentsSchema.safeParse(req.query);
         if (!parsed.success) {
+            log.error("Validation error in listComments", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
@@ -81,6 +89,8 @@ class CommentController {
             });
         }
         catch (err) {
+            log.error("Error in listComments", { error: err });
+
             next(err);
         }
     }
@@ -95,14 +105,19 @@ class CommentController {
 
         const parsed = UpdateCommentSchema.safeParse(candidate);
         if (!parsed.success) {
+            log.error("Validation error in updateComment", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
         try {
             const comment = await this.domain.updateComment(parsed.data);
+
             return res.status(200).json(comment);
         }
         catch (err) {
+            log.error("Error in updateComment", { error: err });
+
             next(err);
         }
     }
@@ -115,13 +130,18 @@ class CommentController {
 
         const parsed = DeleteCommentSchema.safeParse(candidate);
         if (!parsed.success) {
+            log.error("Validation error in deleteComment", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
         try {
             await this.domain.deleteComment(parsed.data);
+
             return res.status(204).send();
         }
         catch (err) {
+            log.error("Error in deleteComment", { error: err });
+
             next(err);
         }
     }
@@ -135,13 +155,18 @@ class CommentController {
 
         const parsed = LikeCommentSchema.safeParse(candidate);
         if (!parsed.success) {
+            log.error("Validation error in likeComment", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
         try {
             const post = await this.domain.likeComment(parsed.data);
+
             return res.status(200).json(post);
         } catch (err) {
+            log.error("Error in likeComment", { error: err });
+
             next(err);
         }
     }
@@ -158,13 +183,18 @@ class CommentController {
 
         const parsed = ListCommentLikesSchema.safeParse(candidate);
         if (!parsed.success) {
+            log.error("Validation error in listCommentLikes", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
         try {
             const likes = await this.domain.listCommentLikes(parsed.data);
+
             return res.status(200).json(likes);
         } catch (err) {
+            log.error("Error in listCommentLikes", { error: err });
+
             next(err);
         }
     }

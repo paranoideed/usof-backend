@@ -1,12 +1,14 @@
 import { z } from "zod";
 import type { NextFunction, Request, Response } from "express";
 
+import {log} from "../../utils/logger/logger";
 import {MustRequestBody} from "../../api/decorators/request_body";
+
 import {CategoryDomain} from "./category.domain";
 import {
     CreateCategorySchema,
-    DeleteCategorySchema, GetCategorySchema,
-    ListCategoriesInput,
+    DeleteCategorySchema,
+    GetCategorySchema,
     ListCategoriesSchema,
     UpdateCategorySchema
 } from "./category.dto";
@@ -22,6 +24,8 @@ class CategoryController {
     async createCategory(req: Request, res: Response, next: NextFunction) {
         const parsed = CreateCategorySchema.safeParse(req.body);
         if (!parsed.success) {
+            log.error("Validation error in createCategory", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
@@ -30,6 +34,8 @@ class CategoryController {
 
             return res.status(201).json(category);
         } catch (err) {
+            log.error("Error in createCategory", { error: err });
+
             next(err);
         }
     }
@@ -37,6 +43,8 @@ class CategoryController {
     async listCategories(req: Request, res: Response, next: NextFunction) {
         const parsed = ListCategoriesSchema.safeParse(req.query);
         if (!parsed.success) {
+            log.error("Validation error in listCategories", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
@@ -50,6 +58,8 @@ class CategoryController {
                 offset: categories.pagination.offset
             });
         } catch (err) {
+            log.error("Error in listCategories", { error: err });
+
             next(err);
         }
     }
@@ -57,6 +67,8 @@ class CategoryController {
     async getCategory(req: Request, res: Response, next: NextFunction) {
         const parsed = GetCategorySchema.safeParse(req.params);
         if (!parsed.success) {
+            log.error("Validation error in getCategory", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
         try {
@@ -67,40 +79,57 @@ class CategoryController {
 
             return res.status(200).json(category);
         } catch (err) {
+            log.error("Error in getCategory", { error: err });
+
             next(err);
         }
     }
 
     @MustRequestBody()
     async updateCategory(req: Request, res: Response, next: NextFunction) {
-        const parsed = UpdateCategorySchema.safeParse(req.body);
+        const candidate = {
+            category_id: req.params.category_id,
+            title: req.body?.title,
+            description: req.body?.description
+        }
+
+        const parsed = UpdateCategorySchema.safeParse(candidate);
         if (!parsed.success) {
+            log.error("Validation error in updateCategory", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
         try {
-            const category = await this.domain.updateCategory(req.params.id, req.body);
-
-            if (!category) {
-                return res.status(404).json({ message: "Category not found" });
-            }
+            const category = await this.domain.updateCategory(candidate);
 
             return res.status(200).json(category);
         } catch (err) {
+            log.error("Error in updateCategory", { error: err });
+
             next(err);
         }
     }
 
     async deleteCategory(req: Request, res: Response, next: NextFunction) {
-        const parsed = DeleteCategorySchema.safeParse(req.params);
+        const candidate = {
+            category_id: req.params?.category_id,
+        }
+
+        const parsed = DeleteCategorySchema.safeParse(candidate);
         if (!parsed.success) {
+            log.error("Validation error in deleteCategory", { errors: parsed.error });
+
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
         try {
-            await this.domain.deleteCategory({ category_id: req.params.id });
+            await this.domain.deleteCategory(candidate);
+
             return res.status(204).send();
         } catch (err) {
+            log.error("Error in deleteCategory", { error: err });
+
             next(err);
         }
     }

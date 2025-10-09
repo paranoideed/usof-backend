@@ -24,10 +24,6 @@ export default class UsersQ {
         this.counter = builder.clone();
     }
 
-    New(): UsersQ {
-        return new UsersQ(this.builder.clone());
-    }
-
     async insert(params: {
         id:            string;
         role:          UserRole;
@@ -114,8 +110,8 @@ export default class UsersQ {
 
     filterUsernameLike(substr: string): this {
         const v = `%${substr}%`;
-        this.builder = this.builder.where('title', 'like', v);
-        this.counter = this.counter.where('title', 'like', v);
+        this.builder = this.builder.where('username', 'like', v);
+        this.counter = this.counter.where('username', 'like', v);
         return this;
     }
 

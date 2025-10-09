@@ -7,10 +7,10 @@ import {profileRouter} from "../modules/profile/profiles.router";
 
 const apiRouter = express.Router();
 
-apiRouter.use("/auth", authRouter);
-apiRouter.use("/profiles", profileRouter);
-apiRouter.use("/posts", postRouter);
-apiRouter.use("/categories", categoryRouter);
-apiRouter.use("/comments", commentRouter);
+apiRouter.use("/api/v1/auth", authRouter);
+apiRouter.use("/api/v1/profiles", profileRouter);
+apiRouter.use("/api/v1/posts", postRouter);
+apiRouter.use("/api/v1/categories", categoryRouter);
+apiRouter.use("/api/v1/comments", commentRouter);
 
 export { apiRouter };

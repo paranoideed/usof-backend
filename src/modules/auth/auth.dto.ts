@@ -24,7 +24,7 @@ export const LoginSchema = z.object({
         message: usernameError,
     }).optional(),
     email:    z.email().max(256).optional(),
-    password: z.string().min(6).max(64),
+    password: z.string()
 }).superRefine((data, ctx) => {
     const hasUsername = !!data.username;
     const hasEmail = !!data.email;

@@ -20,7 +20,11 @@ export type Category = {
 
 export type CategoryList = {
     data: Category[];
-    pagination: { offset: number; limit: number; total: number };
+    pagination: {
+        offset: number;
+        limit: number;
+        total: number;
+    };
 };
 
 export class CategoryDomain {
@@ -43,28 +47,39 @@ export class CategoryDomain {
             created_at:  new Date(),
         });
 
-        return categoryFormat(category);
+        return {
+            id:          category.id,
+            title:       category.title,
+            description: category.description,
+            createdAt:   category.created_at,
+            updatedAt:   category.updated_at,
+        };
     }
 
-    async updateCategory(id: string, params: UpdateCategoryInput): Promise<Category> {
-        const row = await this.db.categories().filterID(id).get();
+    async updateCategory(params: UpdateCategoryInput): Promise<Category> {
+        const row = await this.db.categories().filterID(params.category_id).get();
         if (!row) {
             throw new NotFoundError('Category not found');
         }
 
-        const patch: { title?: string; description?: string | null; updated_at?: Date } = {};
+        const patch: { title?: string | null; description?: string | null} = {};
         if (Object.prototype.hasOwnProperty.call(params, 'title'))       patch.title = params.title!;
         if (Object.prototype.hasOwnProperty.call(params, 'description')) patch.description = params.description;
-        patch.updated_at = new Date();
 
-        await this.db.categories().filterID(id).update(patch);
+        await this.db.categories().filterID(params.category_id).update(patch);
 
-        const updated = await this.db.categories().filterID(id).get();
-        if (!updated) {
+        const category = await this.db.categories().filterID(params.category_id).get();
+        if (!category) {
             throw new NotFoundError('Category not found');
         }
 
-        return categoryFormat(updated);
+        return {
+            id:          category.id,
+            title:       category.title,
+            description: category.description,
+            createdAt:   category.created_at,
+            updatedAt:   category.updated_at,
+        };
     }
 
     async getCategory(params: GetCategoryInput): Promise<Category> {
