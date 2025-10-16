@@ -38,7 +38,7 @@ class ProfileController {
 
     async getProfile(req: Request, res: Response, next: NextFunction) {
         const candidate = {
-            user_id: req.params?.user_id,
+            user_id:  req.params?.user_id,
             username: req.params?.username,
         }
 
@@ -63,8 +63,8 @@ class ProfileController {
     async listUsers(req: Request, res: Response, next: NextFunction) {
         const candidate = {
             username: req.query?.username,
-            limit: req.query?.limit ? parseInt(req.query.limit as string, 10) : undefined,
-            offset: req.query?.offset ? parseInt(req.query.offset as string, 10) : undefined,
+            limit:    req.query?.limit ? parseInt(req.query.limit as string, 10) : undefined,
+            offset:   req.query?.offset ? parseInt(req.query.offset as string, 10) : undefined,
         }
 
         const parsed = GetProfilesSchema.safeParse(candidate);
@@ -92,10 +92,10 @@ class ProfileController {
         }
 
         const candidate = {
-            user_id: req.user.id,
-            username: req.body?.username,
+            user_id:   req.user.id,
+            username:  req.body?.username,
             pseudonym: req.body?.pseudonym,
-            avatar: req.body?.avatar,
+            avatar:    req.body?.avatar,
         }
 
         const parsed = UpdateProfileSchema.safeParse(candidate);

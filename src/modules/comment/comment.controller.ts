@@ -98,9 +98,9 @@ class CommentController {
     @MustRequestBody()
     async updateComment(req: Request, res: Response, next: NextFunction) {
         const candidate = {
-            comment_id:   req.params.comment_id,
-            initiator_id: req.user?.id,
-            content:      req.body?.content,
+            comment_id: req.params.comment_id,
+            author_id:  req.user?.id,
+            content:    req.body?.content,
         };
 
         const parsed = UpdateCommentSchema.safeParse(candidate);
@@ -124,8 +124,8 @@ class CommentController {
 
     async deleteComment(req: Request, res: Response, next: NextFunction) {
         const candidate = {
-            comment_id:   req.params.comment_id,
-            initiator_id: req.user?.id,
+            comment_id: req.params.comment_id,
+            author_id:  req.user?.id,
         };
 
         const parsed = DeleteCommentSchema.safeParse(candidate);
@@ -148,9 +148,9 @@ class CommentController {
 
     async like(req: Request, res: Response, next: NextFunction) {
         const candidate = {
-            initiator_id: req.user?.id,
-            comment_id:   req.params?.comment_id,
-            type: req.body?.type,
+            author_id:  req.user?.id,
+            comment_id: req.params?.comment_id,
+            type:       req.body?.type,
         }
 
         const parsed = LikeCommentSchema.safeParse(candidate);
@@ -174,7 +174,7 @@ class CommentController {
     async ListLikes(req: Request, res: Response, next: NextFunction) {
         const candidate = {
             comment_id: req.params?.comment_id,
-            user_id:    req.query?.user_id,
+            author_id:  req.query?.user_id,
             type:       req.query?.type,
 
             limit:      req.query?.limit,

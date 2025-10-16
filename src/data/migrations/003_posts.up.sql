@@ -1,8 +1,9 @@
 CREATE TABLE posts (
-    id         CHAR(36)     PRIMARY KEY NOT NULL DEFAULT (UUID()),
-    user_id    CHAR(36)     NOT NULL, -- author
-    title      VARCHAR(255) NOT NULL,
-    status     ENUM('active', 'inactive', 'hidden') NOT NULL DEFAULT 'active',
+    id              CHAR(36)     PRIMARY KEY NOT NULL DEFAULT (UUID()),
+    author_id       CHAR(36)     NOT NULL,
+    author_username VARCHAR(255) NOT NULL,
+    title           VARCHAR(255) NOT NULL,
+    status          ENUM('active', 'inactive', 'hidden') NOT NULL DEFAULT 'active',
 
     content    TEXT         NOT NULL,
     likes      INT          NOT NULL DEFAULT 0,
@@ -11,7 +12,11 @@ CREATE TABLE posts (
     created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME     DEFAULT NULL,
 
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    CONSTRAINT fk_posts_author
+        FOREIGN KEY (author_id, author_username)
+            REFERENCES users (id, username)
+            ON UPDATE CASCADE
+            ON DELETE RESTRICT
 );
 
 CREATE TABLE post_categories (
@@ -24,15 +29,21 @@ CREATE TABLE post_categories (
 );
 
 CREATE TABLE post_likes (
-    id         CHAR(36) PRIMARY KEY NOT NULL DEFAULT (UUID()),
-    post_id    CHAR(36) NOT NULL,
-    user_id    CHAR(36) NOT NULL,
-    type       ENUM('like', 'dislike'),
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id              CHAR(36)     PRIMARY KEY NOT NULL DEFAULT (UUID()),
+    post_id         CHAR(36)     NOT NULL,
+    author_id       CHAR(36)     NOT NULL,
+    author_username VARCHAR(255) NOT NULL,
+    type            ENUM('like', 'dislike'),
+    created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE(post_id, user_id),
+    UNIQUE(post_id, author_id),
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+    CONSTRAINT fk_post_likes_author
+        FOREIGN KEY (author_id, author_username)
+            REFERENCES users (id, username)
+            ON UPDATE CASCADE
+            ON DELETE RESTRICT
 );
 
 CREATE TRIGGER trg_post_likes_after_insert
@@ -46,7 +57,7 @@ BEGIN
 
     UPDATE users
     SET reputation = reputation + CASE WHEN NEW.type = 'like' THEN 1 ELSE -1 END
-    WHERE id = (SELECT p.user_id FROM posts p WHERE p.id = NEW.post_id);
+    WHERE id = (SELECT p.author_id FROM posts p WHERE p.id = NEW.post_id);
 END;
 
 CREATE TRIGGER trg_post_likes_after_update
@@ -65,7 +76,7 @@ BEGIN
             WHEN OLD.type = 'dislike' AND NEW.type = 'like'    THEN  2
             ELSE 0
         END
-        WHERE id = (SELECT p.user_id FROM posts p WHERE p.id = NEW.post_id);
+        WHERE id = (SELECT p.author_id FROM posts p WHERE p.id = NEW.post_id);
     END IF;
 END;
 
@@ -80,7 +91,7 @@ BEGIN
 
     UPDATE users
     SET reputation = reputation + CASE WHEN OLD.type = 'like' THEN -1 ELSE 1 END
-    WHERE id = (SELECT p.user_id FROM posts p WHERE p.id = OLD.post_id);
+    WHERE id = (SELECT p.author_id FROM posts p WHERE p.id = OLD.post_id);
 END;
 
 

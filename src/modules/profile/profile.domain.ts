@@ -1,5 +1,4 @@
 import {database, Database} from "../../data/database";
-import {UserRow} from "../../data/users";
 import {GetProfileInput, GetProfilesInput, UpdateProfileInput} from "./profile.dto";
 import {NotFoundError} from "../../api/errors";
 
@@ -9,8 +8,8 @@ export type Profile = {
     pseudonym:  string | null;
     avatar:     string | null;
     reputation: number;
-    createdAt:  Date;
-    updatedAt:  Date | null;
+    created_at: Date;
+    updated_at: Date | null;
 };
 
 export type ProfileList = {
@@ -43,7 +42,7 @@ export class ProfileDomain {
             throw new NotFoundError('User not found');
         }
 
-        return userProfileFormat(user);
+        return user;
     }
 
     async listProfiles(params: GetProfilesInput): Promise<ProfileList> {
@@ -56,7 +55,7 @@ export class ProfileDomain {
         const rows = await query.page(params.limit, params.offset).select();
 
         return {
-            data: rows.map(userProfileFormat),
+            data: rows,
             pagination: {
                 limit:  params.limit,
                 offset: params.offset,
@@ -84,18 +83,6 @@ export class ProfileDomain {
             throw new NotFoundError('User not found after update');
         }
 
-        return userProfileFormat(updated);
+        return updated;
     }
-}
-
-function userProfileFormat(row: UserRow): Profile {
-    return {
-        id:         row.id,
-        username:   row.username,
-        pseudonym:  row.pseudonym || null,
-        avatar:     row.avatar || null,
-        reputation: row.reputation,
-        createdAt:  row.created_at,
-        updatedAt:  row.updated_at || null,
-    };
 }

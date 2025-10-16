@@ -10,20 +10,24 @@ import {
     ListCommentsInput,
     UpdateCommentInput
 } from "./comment.dto";
-import {CommentRow} from "../../data/comments";
-import {CommentLikeRow} from "../../data/comment_likes";
-import {ForbiddenError, NotFoundError, UnauthorizedError} from "../../api/errors";
+import {ForbiddenError, InternalError, NotFoundError, UnauthorizedError} from "../../api/errors";
+
+export type CommentData = {
+    id:              string;
+    post_id:         string;
+    author_id:       string;
+    author_username: string;
+    parent_id:       string | null;
+    content:         string;
+    likes:           number;
+    dislikes:        number;
+    created_at:      Date;
+    updated_at:      Date | null;
+}
 
 export type Comment = {
-    id:        string;
-    postId:    string;
-    userId:    string;
-    parentId:  string | null;
-    content:   string;
-    likes:     number;
-    dislikes:  number;
-    createdAt: Date;
-    updatedAt: Date | null;
+    data: CommentData;
+    user_reaction: string | null;
 }
 
 export type CommentList = {
@@ -32,11 +36,12 @@ export type CommentList = {
 }
 
 export type Like = {
-    id:        string;
-    commentId: string;
-    userId:    string;
-    type:      'like' | 'dislike';
-    createdAt: Date;
+    id:              string;
+    comment_id:      string;
+    author_id:       string;
+    author_username: string;
+    type:            'like' | 'dislike';
+    created_at:      Date;
 }
 
 export type LikesList = {
@@ -62,14 +67,13 @@ export class CommentDomain {
             throw new NotFoundError('Comment not found');
         }
 
-        if (initiator.id !== comment.user_id && initiator.role !== 'admin') {
+        if (initiator.id !== comment.author_id && initiator.role !== 'admin') {
             throw new ForbiddenError('Permission denied');
         }
     }
 
-
     public async createComment(params: CreateCommentInput): Promise<Comment> {
-        const user = await this.db.users().filterID(params.user_id).get();
+        const user = await this.db.users().filterID(params.author_id).get();
         if (!user) {
             throw new UnauthorizedError('Initiator ser not found');
         }
@@ -87,22 +91,29 @@ export class CommentDomain {
         }
 
         const row = await this.db.comments().insert({
-            id:         uuid(),
-            post_id:    params.post_id,
-            user_id:    params.user_id,
-            parent_id:  params.parent_id || null,
-            content:    params.content,
-            created_at: new Date(),
+            id:              uuid(),
+            post_id:         params.post_id,
+            author_id:       params.author_id,
+            author_username: user.username,
+            parent_id:       params.parent_id || null,
+            content:         params.content,
+            created_at:      new Date(),
         });
-        return commentFormat(row);
+        if (!row) {
+            throw new InternalError('Failed to create comment');
+        }
+
+        return this.getComment({comment_id: row.id});
     }
 
     public async getComment(params: GetCommentInput): Promise<Comment> {
-        const row = await this.db.comments().filterID(params.comment_id).get();
+        const row = await this.db.comments().
+            filterID(params.comment_id).
+            getWithDetails(params.initiator_id);
         if (!row) {
             throw new NotFoundError('Comment not found');
         }
-        return commentFormat(row);
+        return row;
     }
 
     public async listComments(params: ListCommentsInput): Promise<CommentList> {
@@ -113,15 +124,20 @@ export class CommentDomain {
         if (params.parent_id) {
             query = query.filterParentID(params.parent_id);
         }
-        if (params.user_id) {
-            query = query.filterUserID(params.user_id);
+        if (params.author_username) {
+            query = query.filterUsername(params.author_username);
+        }
+        if (params.author_id) {
+            query = query.filterAuthorID(params.author_id);
         }
 
         const total = await query.count();
-         let rows = await query.page(params.limit, params.offset).select()
+        let rows = await query.
+            page(params.limit, params.offset).
+            selectWithDetails(params.initiator_id);
 
         return {
-            data: rows.map(commentFormat),
+            data: rows,
             pagination: {
                 offset: params.offset,
                 limit:  params.limit,
@@ -136,7 +152,7 @@ export class CommentDomain {
             throw new NotFoundError('Comment not found');
         }
 
-        if (row.user_id !== params.initiator_id) {
+        if (row.author_id !== params.author_id) {
             throw new ForbiddenError('Permission denied, only author can update comment');
         }
 
@@ -147,20 +163,17 @@ export class CommentDomain {
             updated_at: now,
         });
 
-        row.updated_at = now;
-        row.content = params.content;
-
-        return commentFormat(row);
+        return this.getComment({comment_id: params.comment_id} );
     }
 
     public async deleteComment(params: DeleteCommentInput): Promise<void> {
-        await this.checkRight(params.initiator_id, params.comment_id);
+        await this.checkRight(params.author_id, params.comment_id);
 
         await this.db.comments().filterID(params.comment_id).delete();
     }
 
     public async likeComment(params: LikeCommentInput): Promise<Comment> {
-        const user = await this.db.users().filterID(params.initiator_id).get();
+        const user = await this.db.users().filterID(params.author_id).get();
         if (!user) {
             throw new NotFoundError('User not found');
         }
@@ -171,14 +184,15 @@ export class CommentDomain {
         }
 
         if (params.type === 'remove') {
-            await this.db.commentLikes().filterCommentID(params.comment_id).filterUserID(params.initiator_id).delete();
+            await this.db.commentLikes().filterCommentID(params.comment_id).filterAuthorID(params.author_id).delete();
         } else {
             await this.db.commentLikes().upsert({
-                id:         uuid(),
-                comment_id: params.comment_id,
-                user_id:    params.initiator_id,
-                type:       params.type,
-                created_at: new Date(),
+                id:              uuid(),
+                comment_id:      params.comment_id,
+                author_id:       params.author_id,
+                author_username: user.username,
+                type:            params.type,
+                created_at:      new Date(),
             })
         }
 
@@ -190,8 +204,8 @@ export class CommentDomain {
         if (params.comment_id) {
             query = query.filterCommentID(params.comment_id);
         }
-        if (params.user_id) {
-            query = query.filterUserID(params.user_id);
+        if (params.author_id) {
+            query = query.filterAuthorID(params.author_id);
         }
         if (params.type) {
             query = query.filterType(params.type);
@@ -201,7 +215,7 @@ export class CommentDomain {
         let rows = await query.page(params.limit, params.offset).select()
 
         return {
-            likes: rows.map(commentLikeFormat),
+            likes: rows,
             pagination: {
                 offset: params.offset,
                 limit:  params.limit,
@@ -209,28 +223,4 @@ export class CommentDomain {
             },
         }
     }
-}
-
-function commentFormat(row: CommentRow): Comment {
-    return {
-        id:        row.id,
-        postId:    row.post_id,
-        userId:    row.user_id,
-        parentId:  row.parent_id || null,
-        content:   row.content,
-        likes:     row.likes,
-        dislikes:  row.dislikes,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at || null,
-    };
-}
-
-function commentLikeFormat(row: CommentLikeRow) {
-    return {
-        id:        row.id,
-        commentId: row.comment_id,
-        userId:    row.user_id,
-        type:      row.type,
-        createdAt: row.created_at,
-    };
 }

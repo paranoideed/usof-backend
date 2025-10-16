@@ -1,42 +1,59 @@
 import { v4 as uuid } from 'uuid';
 
 import {database, Database} from "../../data/database";
-import {PostRow} from "../../data/posts";
 import {
     ChangePostStatusInput,
-    CreatePostInput,
+    CreatePostInput, DeleteLikePostInput,
     DeletePostInput,
     GetPostInput,
-    LikePostInput, ListLikesPostsInput, ListLikesPostsSchema,
+    LikePostInput,
+    ListLikesPostsInput,
     ListPostsInput,
     UpdatePostInput
 } from "./post.dto";
-import {PostLikeRow} from "../../data/post_likes";
-import {ConflictError, ForbiddenError, NotFoundError, UnauthorizedError} from "../../api/errors";
+import {
+    ConflictError,
+    ForbiddenError,
+    NotFoundError,
+    UnauthorizedError,
+} from "../../api/errors";
+import {Category} from "../category/category.domain";
 
-export type Post = {
-    id:        string;
-    userId:    string;
-    title:     string;
-    status:    'active' | 'inactive' | 'hidden'
-    content:   string;
-    likes:     number;
-    dislikes:  number;
-    createdAt: Date;
-    updatedAt: Date | null;
+export type PostData = {
+    id:              string;
+    author_id:       string;
+    author_username: string;
+    title:           string;
+    status:          string;
+    content:         string;
+    likes:           number;
+    dislikes:        number;
+    created_at:      Date;
+    updated_at:      Date | null;
 }
 
 export type PostsList = {
     posts: Post[];
-    pagination: { offset: number; limit: number; total: number };
+    pagination: {
+        offset: number;
+        limit: number;
+        total: number;
+    };
 };
 
+export type Post = {
+    data:          PostData;
+    categories:    Category[];
+    user_reaction: string | null;
+}
+
 export type Like = {
-    id:        string;
-    postId:    string;
-    userId:    string;
-    type:      'like' | 'dislike';
-    createdAt: Date;
+    id:              string;
+    post_id:         string;
+    author_id:       string;
+    author_username: string;
+    type:            'like' | 'dislike';
+    created_at:      Date;
 }
 
 export type LikesList = {
@@ -62,45 +79,52 @@ export class PostDomain {
             throw new NotFoundError('Post not found');
         }
 
-        if (initiator.id !== post.user_id && initiator.role !== 'admin') {
+        if (initiator.id !== post.author_id && initiator.role !== 'admin') {
             throw new ForbiddenError('Permission denied');
         }
     }
 
     async createPost(params: CreatePostInput): Promise<Post> {
+        const user = await this.db.users().filterID(params.author_id).get();
+        if (!user) {
+            throw new UnauthorizedError('User not found');
+        }
+
         const postId = uuid();
 
-        const newPost = await this.db.posts().insert({
-            id:        postId,
-            user_id:   params.user_id,
-            title:     params.title,
-            content:   params.content,
-            status:    'active',
-            created_at: new Date(),
-        });
-        if (params.categories && params.categories.length > 0) {
+        await this.db.transaction(async (transaction) => {
+            const newPost = await this.db.posts().insert({
+                id:              postId,
+                author_id:       params.author_id,
+                author_username: user.username,
+                title:           params.title,
+                content:         params.content,
+                status:          'active',
+                created_at:      new Date(),
+            });
             const categoryLinks = params.categories.map((categoryId) => ({
                 post_id:     postId,
                 category_id: categoryId,
             }));
 
             await this.db.postCategories().insert(categoryLinks);
-        }
+        })
 
-        return PostFormat(newPost);
+
+        return this.getPost({ post_id: postId });
     }
 
     async getPost(params: GetPostInput): Promise<Post> {
-        const post = await this.db.posts().filterID(params.post_id).get();
+        const post = await this.db.posts().filterID(params.post_id).getWithDetails(params.user_id);
         if (!post) {
             throw new NotFoundError('Post not found');
         }
 
-        return PostFormat(post);
+        return post;
     }
 
     async updatePost(params: UpdatePostInput): Promise<Post> {
-        await this.checkRight(params.initiator_id, params.post_id);
+        await this.checkRight(params.author_id, params.post_id);
 
         const patch: { title?: string; content?: string; updated_at?: Date } = {};
         if (Object.prototype.hasOwnProperty.call(params, 'title'))   patch.title = params.title!;
@@ -126,11 +150,11 @@ export class PostDomain {
             throw new NotFoundError('Post not found after update');
         }
 
-        return PostFormat(updated);
+        return this.getPost({ post_id: params.post_id });
     }
 
     async deletePost(params: DeletePostInput): Promise<void> {
-        await this.checkRight(params.initiator_id, params.post_id);
+        await this.checkRight(params.author_id, params.post_id);
 
         await this.db.posts().filterID(params.post_id).delete();
     }
@@ -141,24 +165,36 @@ export class PostDomain {
             throw new NotFoundError('Post not found');
         }
 
-        if (params.type === 'remove') {
-            await this.db.postLikes().filterPostID(params.post_id).filterUserID(params.initiator_id).delete();
-        } else {
-             await this.db.postLikes().upsert({
-                    id:         uuid(),
-                    post_id:    params.post_id,
-                    user_id:    params.initiator_id,
-                    type:       params.type,
-                    created_at: new Date(),
-                }
-            )
+        const user = await this.db.users().filterID(params.initiator_id).get();
+        if (!user) {
+            throw new UnauthorizedError('User not found');
         }
+
+        await this.db.postLikes().upsert({
+            id:              uuid(),
+            post_id:         params.post_id,
+            author_id:       params.initiator_id,
+            author_username: user.username,
+            type:            params.type,
+            created_at:      new Date(),
+        });
+
+        return this.getPost({ post_id: params.post_id });
+    }
+
+    async deleteLike(params: DeleteLikePostInput): Promise<Post> {
+        const post = await this.db.posts().filterID(params.post_id).get();
+        if (!post) {
+            throw new NotFoundError('Post not found');
+        }
+
+        await this.db.postLikes().filterPostID(params.post_id).filterAuthorID(params.initiator_id).delete();
 
         return this.getPost({ post_id: params.post_id });
     }
 
     async changePostStatus(params: ChangePostStatusInput): Promise<Post> {
-        const initiator = await this.db.users().filterID(params.initiator_id).get();
+        const initiator = await this.db.users().filterID(params.author_id).get();
         if (!initiator) {
             throw new UnauthorizedError('User not found');
         }
@@ -168,7 +204,7 @@ export class PostDomain {
             throw new NotFoundError('Post not found');
         }
 
-        if (initiator.id !== post.user_id && params.status === 'hidden') {
+        if (initiator.id !== post.author_id && params.status === 'hidden') {
             throw new ConflictError('Only admin can hide posts');
         } else if (initiator.role === 'admin' && params.status !== 'hidden') {
             throw new ConflictError('Admin can only set status to hidden');
@@ -179,37 +215,45 @@ export class PostDomain {
             updated_at: new Date(),
         });
 
-        const updated = await this.db.posts().filterID(params.post_id).get();
+        const updated = await this.db.posts().filterID(params.post_id).getWithDetails(params.author_id);
         if (!updated) {
             throw new NotFoundError('Post not found after status change');
         }
 
-        return PostFormat(updated);
+        return updated;
     }
 
     async listPosts(params: ListPostsInput): Promise<PostsList> {
         let query = this.db.posts();
 
-        if (params.user_id) {
-            query = query.filterUserID(params.user_id);
+        if (params.author_id) {
+            query = query.filterAuthorID(params.author_id);
         }
-        if (params.status) {
-            query = query.filterStatus(params.status);
+
+        if (params.status) query = query.filterStatus(params.status);
+        if (params.title)  query = query.filterTitleLike(params.title);
+
+        if (params.category_ids && params.category_ids.length) {
+            query = (params.categories_mode === 'all')
+                ? query.filterCategoriesAll(params.category_ids)
+                : query.filterCategoriesAny(params.category_ids);
         }
-        if (params.title) {
-            query = query.filterTitleLike(params.title);
+
+        const asc = params.order_dir === 'asc';
+        switch (params.order_by) {
+            case 'created_at': query = query.orderByCreatedAt(asc); break;
+            case 'updated_at': query = query.orderByUpdatedAt(asc); break;
+            case 'likes':      query = query.orderByLikes(asc);     break;
+            case 'dislikes':   query = query.orderByDislikes(asc);  break;
+            case 'rating':     query = query.orderByRating(asc);    break; // likes - dislikes
         }
 
         const total = await query.count();
-        const rows = await query.page(params.limit, params.offset).select();
+        const rows  = await query.page(params.limit, params.offset).selectWithDetails(params.initiator_id);
 
         return {
-            posts: rows.map(PostFormat),
-            pagination: {
-                limit: params.limit,
-                offset: params.offset,
-                total: total,
-            },
+            posts: rows,
+            pagination: { limit: params.limit, offset: params.offset, total },
         };
     }
 
@@ -219,8 +263,8 @@ export class PostDomain {
         if (params.post_id) {
             query = query.filterPostID(params.post_id);
         }
-        if (params.user_id) {
-            query = query.filterUserID(params.user_id);
+        if (params.author_id) {
+            query = query.filterAuthorID(params.author_id);
         }
         if (params.type) {
             query = query.filterType(params.type);
@@ -230,7 +274,7 @@ export class PostDomain {
         const rows = await query.page(params.limit, params.offset).select();
 
         return {
-            data: rows.map(postLikeFormat),
+            data: rows,
             pagination: {
                 limit: params.limit,
                 offset: params.offset,
@@ -238,28 +282,4 @@ export class PostDomain {
             },
         };
     }
-}
-
-function PostFormat(row: PostRow): Post {
-    return {
-        id:        row.id,
-        userId:    row.user_id,
-        title:     row.title,
-        status:    row.status,
-        content:   row.content,
-        likes:     row.likes,
-        dislikes:  row.dislikes,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at || null,
-    };
-}
-
-function postLikeFormat(row: PostLikeRow) {
-    return {
-        id:        row.id,
-        postId:    row.post_id,
-        userId:    row.user_id,
-        type:      row.type,
-        createdAt: row.created_at,
-    };
 }

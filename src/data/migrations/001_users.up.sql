@@ -8,7 +8,9 @@ CREATE TABLE users (
     reputation    INT          DEFAULT 0 NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at    DATETIME DEFAULT NULL
+    updated_at    DATETIME DEFAULT NULL,
+
+   UNIQUE(id, username)
 );
 
 CREATE INDEX idx_username ON users (username);

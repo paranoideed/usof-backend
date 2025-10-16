@@ -3,11 +3,12 @@ import { Knex } from 'knex';
 export type PostReactionType = 'like' | 'dislike';
 
 export type PostLikeRow = {
-    id:         string;
-    post_id:    string;
-    user_id:    string;
-    type:       PostReactionType; // ENUM('like','dislike')
-    created_at: Date;
+    id:              string;
+    post_id:         string;
+    author_id:       string;
+    author_username: string;
+    type:            PostReactionType;
+    created_at:      Date;
 };
 
 export default class PostLikesQ {
@@ -20,18 +21,20 @@ export default class PostLikesQ {
     }
 
     async upsert(params: {
-        id:         string;
-        post_id:    string;
-        user_id:    string;
-        type:       PostReactionType;
-        created_at: Date;
+        id:              string;
+        post_id:         string;
+        author_id:       string;
+        author_username: string;
+        type:            PostReactionType;
+        created_at:      Date;
     }): Promise<PostLikeRow> {
         const data: PostLikeRow = {
-            id:         params.id,
-            post_id:    params.post_id,
-            user_id:    params.user_id,
-            type:       params.type,
-            created_at: params.created_at,
+            id:              params.id,
+            post_id:         params.post_id,
+            author_id:       params.author_id,
+            author_username: params.author_username,
+            type:            params.type,
+            created_at:      params.created_at,
         };
 
         await this.builder.clone().upsert(data)
@@ -71,9 +74,15 @@ export default class PostLikesQ {
         return this;
     }
 
-    filterUserID(userId: string): this {
-        this.builder = this.builder.where('user_id', userId);
-        this.counter = this.counter.where('user_id', userId);
+    filterAuthorID(authorId: string): this {
+        this.builder = this.builder.where('author_id', authorId);
+        this.counter = this.counter.where('author_id', authorId);
+        return this;
+    }
+
+    filterUsername(username: string): this {
+        this.builder = this.builder.where('author_username', username);
+        this.counter = this.counter.where('author_username', username);
         return this;
     }
 

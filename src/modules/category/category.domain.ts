@@ -14,8 +14,8 @@ export type Category = {
     id:          string;
     title:       string;
     description: string;
-    createdAt:   Date;
-    updatedAt:   Date | null;
+    created_at:  Date;
+    updated_at:  Date | null;
 };
 
 export type CategoryList = {
@@ -51,8 +51,8 @@ export class CategoryDomain {
             id:          category.id,
             title:       category.title,
             description: category.description,
-            createdAt:   category.created_at,
-            updatedAt:   category.updated_at,
+            created_at:  category.created_at,
+            updated_at:  category.updated_at,
         };
     }
 
@@ -77,8 +77,8 @@ export class CategoryDomain {
             id:          category.id,
             title:       category.title,
             description: category.description,
-            createdAt:   category.created_at,
-            updatedAt:   category.updated_at,
+            created_at:  category.created_at,
+            updated_at:  category.updated_at,
         };
     }
 
@@ -116,6 +116,11 @@ export class CategoryDomain {
             throw new NotFoundError('Category not found');
         }
 
+        await this.db.transaction(async (transaction) => {
+            await transaction.posts.filterCategoriesAny([params.category_id]).delete();
+            await transaction.categories.filterID(params.category_id).delete();
+        })
+
         await this.db.categories().filterID(params.category_id).delete();
     }
 }
@@ -125,7 +130,7 @@ function categoryFormat(row: CategoryRow): Category {
         id:          row.id,
         title:       row.title,
         description: row.description,
-        createdAt:   row.created_at,
-        updatedAt:   row.updated_at,
+        created_at:  row.created_at,
+        updated_at:  row.updated_at,
     };
 }

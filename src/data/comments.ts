@@ -1,10 +1,11 @@
 import { Knex } from 'knex';
 
 export type CommentRow = {
-    id:        string;
-    post_id:   string;
-    user_id:   string;
-    parent_id: string | null;
+    id:              string;
+    post_id:         string;
+    author_id:       string;
+    author_username: string;
+    parent_id:       string | null;
 
     content:  string;
     likes:    number;
@@ -12,6 +13,11 @@ export type CommentRow = {
 
     created_at: Date;
     updated_at: Date | null;
+};
+
+export type CommentWithDetails = {
+    data:          CommentRow;
+    user_reaction: string | null;
 };
 
 export default class CommentsQ {
@@ -24,23 +30,25 @@ export default class CommentsQ {
     }
 
     async insert(params: {
-        id:          string;
-        post_id:     string;
-        user_id:     string;
-        parent_id?:  string | null;
-        content:     string;
-        created_at:  Date;
+        id:              string;
+        post_id:         string;
+        author_id:       string;
+        author_username: string;
+        parent_id?:      string | null;
+        content:         string;
+        created_at:      Date;
     }): Promise<CommentRow> {
         const data: CommentRow = {
-            id:         params.id,
-            post_id:    params.post_id,
-            user_id:    params.user_id,
-            parent_id:  params.parent_id ?? null,
-            content:    params.content,
-            likes:      0,
-            dislikes:   0,
-            created_at: params.created_at,
-            updated_at: null,
+            id:              params.id,
+            post_id:         params.post_id,
+            author_id:       params.author_id,
+            author_username: params.author_username,
+            parent_id:       params.parent_id ?? null,
+            content:         params.content,
+            likes:           0,
+            dislikes:        0,
+            created_at:      params.created_at,
+            updated_at:      null,
         };
 
         await this.builder.clone().insert(data);
@@ -55,6 +63,105 @@ export default class CommentsQ {
     async select(): Promise<CommentRow[]> {
         const rows = await this.builder.clone();
         return rows ?? [];
+    }
+
+    async getWithDetails(userId: string | null | undefined): Promise<CommentWithDetails | null> {
+        const kx = this.builder.client!;
+        const hasUser = Boolean(userId);
+
+        let q = this.builder.clone();
+
+        if (hasUser) {
+            q = q.leftJoin({ l_me: 'comment_likes' }, function () {
+                // @ts-ignore
+                this.on('l_me.comment_id', '=', 'comments.id')
+                    .andOn('l_me.author_id', '=', (this as any).client.raw('?', [userId]));
+            });
+        }
+
+        const row = await q
+            .clearSelect()
+            .select([
+                'comments.id',
+                'comments.post_id',
+                'comments.author_id',
+                'comments.author_username',
+                'comments.parent_id',
+                'comments.content',
+                'comments.likes',
+                'comments.dislikes',
+                'comments.created_at',
+                'comments.updated_at',
+                hasUser ? kx.raw('l_me.type AS user_reaction') : kx.raw('NULL AS user_reaction'),
+            ])
+            .first();
+
+        if (!row) return null;
+
+        const data: CommentRow = {
+            id: row.id,
+            post_id: row.post_id,
+            author_id: row.author_id,
+            author_username: row.author_username,
+            parent_id: row.parent_id,
+            content: row.content,
+            likes: row.likes,
+            dislikes: row.dislikes,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+        };
+
+        return {
+            data,
+            user_reaction: hasUser ? ((row as any).user_reaction ?? null) : null,
+        };
+    }
+
+    async selectWithDetails(userId: string | null | undefined): Promise<CommentWithDetails[]> {
+        const kx = this.builder.client!;
+        const hasUser = Boolean(userId);
+
+        let q = this.builder.clone();
+
+        if (hasUser) {
+            q = q.leftJoin({ l_me: 'comment_likes' }, function () {
+                // @ts-ignore
+                this.on('l_me.comment_id', '=', 'comments.id')
+                    .andOn('l_me.author_id', '=', (this as any).client.raw('?', [userId]));
+            });
+        }
+
+        const rows = await q
+            .clearSelect()
+            .select([
+                'comments.id',
+                'comments.post_id',
+                'comments.author_id',
+                'comments.author_username',
+                'comments.parent_id',
+                'comments.content',
+                'comments.likes',
+                'comments.dislikes',
+                'comments.created_at',
+                'comments.updated_at',
+                hasUser ? kx.raw('l_me.type AS user_reaction') : kx.raw('NULL AS user_reaction'),
+            ]);
+
+        return (rows ?? []).map((row) => ({
+            data: {
+                id: row.id,
+                post_id: row.post_id,
+                author_id: row.author_id,
+                author_username: row.author_username,
+                parent_id: row.parent_id,
+                content: row.content,
+                likes: row.likes,
+                dislikes: row.dislikes,
+                created_at: row.created_at,
+                updated_at: row.updated_at,
+            },
+            user_reaction: hasUser ? ((row as any).user_reaction ?? null) : null,
+        }));
     }
 
     async update(set: {
@@ -102,9 +209,15 @@ export default class CommentsQ {
         return this;
     }
 
-    filterUserID(userId: string): this {
-        this.builder = this.builder.where('user_id', userId);
-        this.counter = this.counter.where('user_id', userId);
+    filterAuthorID(authorId: string): this {
+        this.builder = this.builder.where('author_id', authorId);
+        this.counter = this.counter.where('author_id', authorId);
+        return this;
+    }
+
+    filterUsername(username: string): this {
+        this.builder = this.builder.where('author_username', username);
+        this.counter = this.counter.where('author_username', username);
         return this;
     }
 

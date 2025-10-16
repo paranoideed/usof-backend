@@ -1,17 +1,18 @@
 import { z } from "zod";
 import type { NextFunction, Request, Response } from "express";
 
+import {log} from "../../utils/logger/logger";
 import {PostDomain} from "./post.domain";
 import {MustRequestBody} from "../../api/decorators/request_body";
 import {
-    CreatePostSchema,
+    CreatePostSchema, DeleteLikePostSchema,
     DeletePostSchema,
+    GetPostSchema,
     LikePostSchema,
     ListLikesPostsSchema,
     ListPostsSchema,
     UpdatePostSchema
 } from "./post.dto";
-import {log} from "../../utils/logger/logger";
 
 class PostController {
     private domain: PostDomain;
@@ -23,10 +24,10 @@ class PostController {
     @MustRequestBody()
     async createPost(req: Request, res: Response, next: NextFunction) {
         const candidate = {
-            author_id: req.user?.id,
-            title: req.body?.title,
-            content: req.body?.content,
-            category: req.body?.category,
+            author_id:  req.user?.id,
+            title:      req.body?.title,
+            content:    req.body?.content,
+            categories: req.body?.categories,
         };
 
         const parsed = CreatePostSchema.safeParse(candidate);
@@ -39,7 +40,9 @@ class PostController {
         try {
             const post = await this.domain.createPost(parsed.data);
 
-            return res.status(201).json(post);
+            return res.status(201).json({
+                post: post,
+            });
         } catch (err) {
             log.error("Error in createPost", { error: err });
 
@@ -48,11 +51,16 @@ class PostController {
     }
 
     async getPost(req: Request, res: Response, next: NextFunction) {
+        console.log("getPost called");
+
         const candidate = {
+            user_id: req.user?.id,
             post_id: req.params?.post_id,
         }
 
-        const parsed = z.object({ post_id: z.string().uuid() }).safeParse(candidate);
+        console.log("getPost candidate:", candidate);
+
+        const parsed = GetPostSchema.safeParse(candidate);
         if (!parsed.success) {
             log.error("Validation error in getPost", { errors: parsed.error });
 
@@ -72,11 +80,15 @@ class PostController {
 
     async listPosts(req: Request, res: Response, next: NextFunction) {
         const candidate = {
-            user_id: req.query?.user_id,
-            status: req.query?.status,
-            title: req.query?.title,
-            offset: req.query?.offset,
-            limit: req.query?.limit,
+            user_id:         req.query?.user_id,
+            status:          req.query?.status,
+            title:           req.query?.title,
+            category_ids:    req.query?.category_ids,
+            categories_mode: req.query?.categories_mode,
+            order_by:        req.query?.order_by,
+            order_dir:       req.query?.order_dir,
+            offset:          req.query?.offset,
+            limit:           req.query?.limit,
         }
 
         const parsed = ListPostsSchema.safeParse(candidate);
@@ -88,6 +100,7 @@ class PostController {
 
         try {
             const posts = await this.domain.listPosts(parsed.data);
+
             return res.status(200).json(posts);
         } catch (err) {
             log.error("Error in listPosts", { error: err });
@@ -100,10 +113,10 @@ class PostController {
     async updatePost(req: Request, res: Response, next: NextFunction) {
         const candidate = {
             initiator_id: req.user?.id,
-            post_id: req.params?.post_id,
-            title: req.body?.title,
-            content: req.body?.content,
-            categories: req.body?.categories,
+            post_id:      req.params?.post_id,
+            title:        req.body?.title,
+            content:      req.body?.content,
+            categories:   req.body?.categories,
         }
 
         const parsed = UpdatePostSchema.safeParse(candidate);
@@ -128,7 +141,7 @@ class PostController {
     async deletePost(req: Request, res: Response, next: NextFunction) {
         const candidate = {
             initiator_id: req.user?.id,
-            post_id: req.params?.post_id,
+            post_id:      req.params?.post_id,
         }
 
         const parsed = DeletePostSchema.safeParse(candidate);
@@ -150,10 +163,11 @@ class PostController {
     }
 
     async like(req: Request, res: Response, next: NextFunction) {
+        log.info("like called");
         const candidate = {
             initiator_id: req.user?.id,
-            post_id: req.params?.post_id,
-            type: req.body?.type,
+            post_id:      req.params?.post_id,
+            type:         req.body?.type,
         }
 
         const parsed = LikePostSchema.safeParse(candidate);
@@ -173,11 +187,35 @@ class PostController {
         }
     }
 
+    async deleteLike(req: Request, res: Response, next: NextFunction) {
+        log.info("deleteLike called");
+        const candidate = {
+            initiator_id: req.user?.id,
+            post_id:      req.params?.post_id,
+        }
+
+        const parsed = DeleteLikePostSchema.safeParse(candidate);
+        if (!parsed.success) {
+            log.error("Validation error in like", { errors: parsed.error });
+
+            return res.status(400).json(z.treeifyError(parsed.error));
+        }
+
+        try {
+            const post = await this.domain.deleteLike(parsed.data);
+            return res.status(200).json(post);
+        } catch (err) {
+            log.error("Error in like", { error: err });
+
+            next(err);
+        }
+    }
+
     async ListLikes(req: Request, res: Response, next: NextFunction) {
         const candidate = {
             post_id: req.params?.post_id,
-            offset: req.query?.offset,
-            limit: req.query?.limit,
+            offset:  req.query?.offset,
+            limit:   req.query?.limit,
         }
 
         const parsed = ListLikesPostsSchema.safeParse(candidate);

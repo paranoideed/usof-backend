@@ -1,8 +1,10 @@
 CREATE TABLE comments (
-    id         CHAR(36) PRIMARY KEY NOT NULL DEFAULT (UUID()),
-    post_id    CHAR(36) NOT NULL,
-    user_id    CHAR(36) NOT NULL,
-    parent_id  CHAR(36) DEFAULT NULL,
+    id              CHAR(36)     PRIMARY KEY NOT NULL DEFAULT (UUID()),
+    post_id         CHAR(36)     NOT NULL,
+    author_id       CHAR(36)     NOT NULL,
+    author_username VARCHAR(255) NOT NULL,
+    user_id         CHAR(36)     NOT NULL,
+    parent_id       CHAR(36)     DEFAULT NULL,
 
     content    VARCHAR(4096) NOT NULL,
     likes      INT           NOT NULL DEFAULT 0,
@@ -12,8 +14,13 @@ CREATE TABLE comments (
     updated_at DATETIME DEFAULT NULL,
 
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
+    FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_comments_author
+    FOREIGN KEY (author_id, author_username)
+    REFERENCES users (id, username)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT
 );
 
 CREATE INDEX idx_comment_post_id   ON comments (post_id);
@@ -21,15 +28,21 @@ CREATE INDEX idx_comment_user_id   ON comments (user_id);
 CREATE INDEX idx_comment_parent_id ON comments (parent_id);
 
 CREATE TABLE comment_likes (
-    id          CHAR(36) PRIMARY KEY NOT NULL DEFAULT (UUID()),
-    comment_id  CHAR(36) NOT NULL,
-    user_id     CHAR(36) NOT NULL,
-    type        ENUM('like', 'dislike'),
-    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id              CHAR(36)     PRIMARY KEY NOT NULL DEFAULT (UUID()),
+    comment_id      CHAR(36)     NOT NULL,
+    author_id       CHAR(36)     NOT NULL,
+    author_username VARCHAR(255) NOT NULL,
+    type            ENUM('like', 'dislike'),
+    created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE(comment_id, user_id),
+    UNIQUE(comment_id, author_id),
     FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE
+
+    CONSTRAINT fk_comment_likes_author
+        FOREIGN KEY (author_id, author_username)
+            REFERENCES users (id, username)
+            ON UPDATE CASCADE
+            ON DELETE RESTRICT
 );
 
 CREATE TRIGGER trg_comment_likes_ai
@@ -43,7 +56,7 @@ BEGIN
 
     UPDATE users
     SET reputation = reputation + CASE WHEN NEW.`type` = 'like' THEN 1 ELSE -1 END
-    WHERE id = (SELECT c.user_id FROM comments c WHERE c.id = NEW.comment_id);
+    WHERE id = (SELECT c.author_id FROM comments c WHERE c.id = NEW.comment_id);
 END;
 
 CREATE TRIGGER trg_comment_likes_au
@@ -62,7 +75,7 @@ BEGIN
             WHEN OLD.`type` = 'dislike' AND NEW.`type` = 'like'    THEN  2
             ELSE 0
         END
-        WHERE id = (SELECT c.user_id FROM comments c WHERE c.id = NEW.comment_id);
+        WHERE id = (SELECT c.author_id FROM comments c WHERE c.id = NEW.comment_id);
     END IF;
 END;
 
@@ -77,7 +90,7 @@ BEGIN
 
     UPDATE users
     SET reputation = reputation + CASE WHEN OLD.`type` = 'like' THEN -1 ELSE 1 END
-    WHERE id = (SELECT c.user_id FROM comments c WHERE c.id = OLD.comment_id);
+    WHERE id = (SELECT c.author_id FROM comments c WHERE c.id = OLD.comment_id);
 END;
 
 CREATE INDEX idx_comment_likes_comment_id ON comment_likes (comment_id);
