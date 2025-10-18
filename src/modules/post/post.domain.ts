@@ -2,7 +2,7 @@ import { v4 as uuid } from 'uuid';
 
 import {database, Database} from "../../data/database";
 import {
-    ChangePostStatusInput,
+    UpdatePostStatusInput,
     CreatePostInput, DeleteLikePostInput,
     DeletePostInput,
     GetPostInput,
@@ -18,6 +18,7 @@ import {
     UnauthorizedError,
 } from "../../api/errors";
 import {Category} from "../category/category.domain";
+import {log} from "../../utils/logger/logger";
 
 export type PostData = {
     id:              string;
@@ -124,7 +125,7 @@ export class PostDomain {
     }
 
     async updatePost(params: UpdatePostInput): Promise<Post> {
-        await this.checkRight(params.author_id, params.post_id);
+        await this.checkRight(params.initiator_id, params.post_id);
 
         const patch: { title?: string; content?: string; updated_at?: Date } = {};
         if (Object.prototype.hasOwnProperty.call(params, 'title'))   patch.title = params.title!;
@@ -133,28 +134,28 @@ export class PostDomain {
 
         await this.db.posts().filterID(params.post_id).update(patch);
 
-        if (params.categories) {
-            await this.db.postCategories().filterPostID(params.post_id).delete();
+        await this.db.transaction(async (transaction) => {
+            await transaction.postCategories.filterPostID(params.post_id).delete();
 
             if (params.categories.length > 0) {
                 const categoryLinks = params.categories.map((categoryId) => ({
                     post_id:     params.post_id,
                     category_id: categoryId,
                 }));
-                await this.db.postCategories().insert(categoryLinks);
+                await transaction.postCategories.insert(categoryLinks);
             }
-        }
+        });
 
-        const updated = await this.db.posts().filterID(params.post_id).get();
+        const updated = await this.db.posts().filterID(params.post_id).getWithDetails(params.initiator_id);
         if (!updated) {
             throw new NotFoundError('Post not found after update');
         }
 
-        return this.getPost({ post_id: params.post_id });
+        return updated;
     }
 
     async deletePost(params: DeletePostInput): Promise<void> {
-        await this.checkRight(params.author_id, params.post_id);
+        await this.checkRight(params.initiator_id, params.post_id);
 
         await this.db.posts().filterID(params.post_id).delete();
     }
@@ -193,8 +194,8 @@ export class PostDomain {
         return this.getPost({ post_id: params.post_id });
     }
 
-    async changePostStatus(params: ChangePostStatusInput): Promise<Post> {
-        const initiator = await this.db.users().filterID(params.author_id).get();
+    async updatePostStatus(params: UpdatePostStatusInput): Promise<Post> {
+        const initiator = await this.db.users().filterID(params.initiator_id).get();
         if (!initiator) {
             throw new UnauthorizedError('User not found');
         }
@@ -204,10 +205,8 @@ export class PostDomain {
             throw new NotFoundError('Post not found');
         }
 
-        if (initiator.id !== post.author_id && params.status === 'hidden') {
-            throw new ConflictError('Only admin can hide posts');
-        } else if (initiator.role === 'admin' && params.status !== 'hidden') {
-            throw new ConflictError('Admin can only set status to hidden');
+        if (initiator.id !== post.author_id && initiator.role !== 'admin') {
+            throw new ConflictError('Only admin can change status not own posts');
         }
 
         await this.db.posts().filterID(params.post_id).update({
@@ -215,7 +214,7 @@ export class PostDomain {
             updated_at: new Date(),
         });
 
-        const updated = await this.db.posts().filterID(params.post_id).getWithDetails(params.author_id);
+        const updated = await this.db.posts().filterID(params.post_id).getWithDetails(params.initiator_id);
         if (!updated) {
             throw new NotFoundError('Post not found after status change');
         }
@@ -233,10 +232,8 @@ export class PostDomain {
         if (params.status) query = query.filterStatus(params.status);
         if (params.title)  query = query.filterTitleLike(params.title);
 
-        if (params.category_ids && params.category_ids.length) {
-            query = (params.categories_mode === 'all')
-                ? query.filterCategoriesAll(params.category_ids)
-                : query.filterCategoriesAny(params.category_ids);
+        if (params.category_id != null) {
+            query.filterCategory(params.category_id)
         }
 
         const asc = params.order_dir === 'asc';
@@ -250,6 +247,8 @@ export class PostDomain {
 
         const total = await query.count();
         const rows  = await query.page(params.limit, params.offset).selectWithDetails(params.initiator_id);
+
+        log.info("listPosts rows ", rows);
 
         return {
             posts: rows,

@@ -16,11 +16,9 @@ export const ListPostsSchema = z.object({
     initiator_id:    z.uuid().optional(),
     author_id:       z.uuid().optional(),
     author_username: z.string().optional(),
-    status:          z.enum(['active', 'inactive', 'hidden']).optional(),
+    category_id:     z.uuid().optional(),
+    status:          z.enum(['active', 'closed']).optional(),
     title:           z.string().min(1).max(256).optional(),
-
-    category_ids:    z.array(z.uuid()).nonempty().optional(),
-    categories_mode: z.enum(['any','all']).default('any'),
 
     order_by:  z.enum(['created_at','updated_at','likes','dislikes','rating']).default('rating'),
     order_dir: z.enum(['asc','desc']).default('desc'),
@@ -31,10 +29,10 @@ export const ListPostsSchema = z.object({
 
 export const UpdatePostSchema = z.object({
     post_id:         z.uuid(),
-    author_id:       z.uuid(),
-    title:           z.string().min(1).max(256).optional(),
-    content:         z.string().min(1).optional(),
-    categories:      z.array(z.uuid()).min(1).max(5).optional(),
+    initiator_id:    z.uuid(),
+    title:           z.string().min(1).max(256),
+    content:         z.string().min(1),
+    categories:      z.array(z.uuid()).min(1).max(5),
 }).superRefine((data, ctx) => {
     const provided = [data.title, data.content].filter(Boolean);
 
@@ -44,24 +42,18 @@ export const UpdatePostSchema = z.object({
             message: "At least one updatable field (title, content) must be provided",
         });
     }
+});
 
-    if (provided.length > 1) {
-        ctx.addIssue({
-            code: "custom",
-            message: "Provide only one of title or content",
-        });
-    }
+export const UpdatePostStatusSchema = z.object({
+    initiator_id:       z.uuid(),
+    initiator_role:     z.string(),
+    post_id:            z.uuid(),
+    status:             z.enum(['active', 'closed']),
 });
 
 export const DeletePostSchema = z.object({
-    author_id:       z.uuid(),
+    initiator_id:       z.uuid(),
     post_id:         z.uuid(),
-});
-
-export const ChangePostStatusSchema = z.object({
-    author_id:       z.uuid(),
-    post_id:         z.uuid(),
-    status:          z.enum(['active', 'inactive', 'hidden']),
 });
 
 export const LikePostSchema = z.object({
@@ -90,7 +82,7 @@ export type GetPostInput          = z.infer<typeof GetPostSchema>;
 export type ListPostsInput        = z.infer<typeof ListPostsSchema>;
 export type UpdatePostInput       = z.infer<typeof UpdatePostSchema>;
 export type DeletePostInput       = z.infer<typeof DeletePostSchema>;
-export type ChangePostStatusInput = z.infer<typeof ChangePostStatusSchema>;
+export type UpdatePostStatusInput = z.infer<typeof UpdatePostStatusSchema>;
 export type LikePostInput         = z.infer<typeof LikePostSchema>;
 export type DeleteLikePostInput   = z.infer<typeof DeleteLikePostSchema>;
 export type ListLikesPostsInput = z.infer<typeof ListLikesPostsSchema>;

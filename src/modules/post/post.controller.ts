@@ -5,13 +5,14 @@ import {log} from "../../utils/logger/logger";
 import {PostDomain} from "./post.domain";
 import {MustRequestBody} from "../../api/decorators/request_body";
 import {
+    UpdatePostStatusSchema,
     CreatePostSchema, DeleteLikePostSchema,
     DeletePostSchema,
     GetPostSchema,
     LikePostSchema,
     ListLikesPostsSchema,
     ListPostsSchema,
-    UpdatePostSchema
+    UpdatePostSchema,
 } from "./post.dto";
 
 class PostController {
@@ -51,14 +52,10 @@ class PostController {
     }
 
     async getPost(req: Request, res: Response, next: NextFunction) {
-        console.log("getPost called");
-
         const candidate = {
             user_id: req.user?.id,
             post_id: req.params?.post_id,
         }
-
-        console.log("getPost candidate:", candidate);
 
         const parsed = GetPostSchema.safeParse(candidate);
         if (!parsed.success) {
@@ -79,12 +76,13 @@ class PostController {
     }
 
     async listPosts(req: Request, res: Response, next: NextFunction) {
+        log.info("ListPosts req.query ", req.query);
+
         const candidate = {
             user_id:         req.query?.user_id,
             status:          req.query?.status,
             title:           req.query?.title,
-            category_ids:    req.query?.category_ids,
-            categories_mode: req.query?.categories_mode,
+            category_id:     req.query?.category_id,
             order_by:        req.query?.order_by,
             order_dir:       req.query?.order_dir,
             offset:          req.query?.offset,
@@ -93,13 +91,15 @@ class PostController {
 
         const parsed = ListPostsSchema.safeParse(candidate);
         if (!parsed.success) {
-            log.error("Validation error in listPosts", { errors: parsed.error });
+            // log.error("Validation error in listPosts", { errors: parsed.error });
 
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
         try {
             const posts = await this.domain.listPosts(parsed.data);
+
+            // log.info("ListPosts posts ", posts);
 
             return res.status(200).json(posts);
         } catch (err) {
@@ -112,8 +112,8 @@ class PostController {
     @MustRequestBody()
     async updatePost(req: Request, res: Response, next: NextFunction) {
         const candidate = {
-            initiator_id: req.user?.id,
             post_id:      req.params?.post_id,
+            initiator_id: req.user?.id,
             title:        req.body?.title,
             content:      req.body?.content,
             categories:   req.body?.categories,
@@ -130,9 +130,42 @@ class PostController {
         try {
             const post = await this.domain.updatePost(parsed.data);
 
+            console.log("Updated post ", post.data);
             return res.status(200).json(post);
         } catch (err) {
             log.error("Error in updatePost", { error: err });
+
+            next(err);
+        }
+    }
+
+    @MustRequestBody()
+    async updatePostStatus(req: Request, res: Response, next: NextFunction) {
+        const candidate = {
+            initiator_id:   req.user?.id,
+            initiator_role: req.user?.role,
+            post_id:        req.params?.post_id,
+            status:         req.body?.status,
+        }
+
+        const parsed = UpdatePostStatusSchema.safeParse(candidate);
+        if (!parsed.success) {
+            log.error("Validation error in updatePostStatus", { errors: parsed.error });
+
+            return res.status(400).json(z.treeifyError(parsed.error));
+        }
+
+        try {
+            const post = await this.domain.getPost(parsed.data);
+            if (post.data.author_id !== candidate.initiator_id && candidate.initiator_role !== 'admin') {
+                return res.status(403).json({ message: "Only the author or admin can change the post status" });
+            }
+
+            const update = await this.domain.updatePostStatus(parsed.data);
+
+            return res.status(200).json(update);
+        } catch (err) {
+            log.error("Error in updatePostStatus", { error: err });
 
             next(err);
         }
@@ -163,7 +196,6 @@ class PostController {
     }
 
     async like(req: Request, res: Response, next: NextFunction) {
-        log.info("like called");
         const candidate = {
             initiator_id: req.user?.id,
             post_id:      req.params?.post_id,
@@ -188,7 +220,6 @@ class PostController {
     }
 
     async deleteLike(req: Request, res: Response, next: NextFunction) {
-        log.info("deleteLike called");
         const candidate = {
             initiator_id: req.user?.id,
             post_id:      req.params?.post_id,
@@ -211,7 +242,7 @@ class PostController {
         }
     }
 
-    async ListLikes(req: Request, res: Response, next: NextFunction) {
+    async listLikes(req: Request, res: Response, next: NextFunction) {
         const candidate = {
             post_id: req.params?.post_id,
             offset:  req.query?.offset,

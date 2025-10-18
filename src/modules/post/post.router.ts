@@ -32,7 +32,7 @@ postRouter.get(
     }
 );
 
-postRouter.post(
+postRouter.put(
     "/:post_id",
     authMiddleware,
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -56,6 +56,14 @@ postRouter.post(
     }
 );
 
+postRouter.patch(
+    "/:post_id/status",
+    authMiddleware,
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        await postController.updatePostStatus(req, res, next);
+    }
+);
+
 postRouter.delete(
     "/:post_id/like",
     authMiddleware,
@@ -67,7 +75,7 @@ postRouter.delete(
 postRouter.get(
     "/:post_id/like",
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        await postController.ListLikes(req, res, next);
+        await postController.listLikes(req, res, next);
     }
 );
 

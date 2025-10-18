@@ -1,7 +1,7 @@
 import { Knex } from 'knex';
 import { CategoryRow } from "./categories";
 
-export type PostStatus = 'active' | 'inactive' | 'hidden';
+export type PostStatus = 'active' | 'closed';
 
 export type PostRow = {
     id:              string;
@@ -26,12 +26,10 @@ export default class PostsQ {
     private builder: Knex.QueryBuilder<PostRow, PostRow[]>;
     private counter: Knex.QueryBuilder<PostRow, PostRow[]>;
 
-    // единый алиас базовой таблицы
     private readonly alias = 'p';
     private C = (col: string) => `${this.alias}.${col}`;
 
     constructor(builder: Knex.QueryBuilder<PostRow, PostRow[]>) {
-        // насильно задаём алиас базовой таблице и клонируем для counter
         this.builder = builder.clone().from({ [this.alias]: 'posts' });
         this.counter = builder.clone().from({ [this.alias]: 'posts' });
     }
@@ -58,7 +56,7 @@ export default class PostsQ {
             updated_at:      null,
         };
 
-        await this.builder.clone().insert(data);
+        await this.builder.client!.queryBuilder().table('posts').insert(data);
         return data;
     }
 
@@ -119,7 +117,7 @@ export default class PostsQ {
                 this.C('created_at'),
                 this.C('updated_at'),
                 hasUser ? client.raw('l_me.type AS user_reaction') : client.raw('NULL AS user_reaction'),
-                client.raw('cats.categories_json AS categories_json'),
+                client.raw('CAST(cats.categories_json AS CHAR) AS categories_json'),
             ])
             .first();
 
@@ -190,7 +188,7 @@ export default class PostsQ {
                 this.C('created_at'),
                 this.C('updated_at'),
                 hasUser ? client.raw('l_me.type AS user_reaction') : client.raw('NULL AS user_reaction'),
-                client.raw('cats.categories_json AS categories_json'),
+                client.raw('CAST(cats.categories_json AS CHAR) AS categories_json'),
             ]);
 
         return (rows ?? []).map((row: any) => {
@@ -269,32 +267,25 @@ export default class PostsQ {
         return this;
     }
 
-    filterCategoriesAny(categoryIds: string[]): this {
+    filterCategory(categoryId: string): this {
+        if (!categoryId) return this; // ничего не делаем, если не выбрано
+
+        // основной список
         this.builder = this.builder.whereExists((qb) =>
             qb.select(this.builder.client.raw('1'))
                 .from('post_categories as pc')
                 .whereRaw('pc.post_id = ??', [this.C('id')])
-                .whereIn('pc.category_id', categoryIds)
+                .where('pc.category_id', categoryId) // одна категория
         );
+
+        // счётчик (тот же фильтр)
         this.counter = this.counter.whereExists((qb) =>
             qb.select(this.counter.client.raw('1'))
                 .from('post_categories as pc')
                 .whereRaw('pc.post_id = ??', [this.C('id')])
-                .whereIn('pc.category_id', categoryIds)
+                .where('pc.category_id', categoryId)
         );
-        return this;
-    }
 
-    filterCategoriesAll(categoryIds: string[]): this {
-        const sub = this.builder.client!.queryBuilder()
-            .from('post_categories as pc')
-            .select('pc.post_id')
-            .whereIn('pc.category_id', categoryIds)
-            .groupBy('pc.post_id')
-            .havingRaw('count(distinct pc.category_id) = ?', [categoryIds.length]);
-
-        this.builder = this.builder.whereIn(this.C('id'), sub.clone());
-        this.counter = this.counter.whereIn(this.C('id'), sub.clone());
         return this;
     }
 
@@ -393,17 +384,45 @@ export default class PostsQ {
 }
 
 function parseCategoriesJson(raw: any): CategoryRow[] {
-    if (!raw) return [];
+    if (raw == null) return [];
+
     try {
-        const arr = JSON.parse(raw);
-        return (arr as any[]).map((c) => ({
+        // 1) Если Buffer — превратим в строку
+        if (Buffer.isBuffer(raw)) {
+            raw = raw.toString('utf8');
+        }
+
+        // 2) Если объект вида { type: 'Buffer', data: [...] } (иногда так приходит)
+        if (typeof raw === 'object' && raw?.type === 'Buffer' && Array.isArray(raw.data)) {
+            raw = Buffer.from(raw.data).toString('utf8');
+        }
+
+        // 3) Если строка — просто JSON.parse
+        let arr: any;
+        if (typeof raw === 'string') {
+            arr = JSON.parse(raw);
+        } else if (Array.isArray(raw)) {
+            arr = raw; // уже массив
+        } else if (typeof raw === 'object') {
+            // Вдруг драйвер уже отдал JSON как объект
+            arr = raw;
+        } else {
+            return [];
+        }
+
+        if (!Array.isArray(arr)) return [];
+
+        return arr.map((c: any) => ({
             id: String(c.id),
             title: String(c.title),
             description: c.description == null ? "" : String(c.description),
-            created_at: new Date(c.created_at),
+            // если на бэке нужны строки — оставь как строки; если Date — приводи к Date
+            created_at: c.created_at ? new Date(c.created_at) : new Date(0),
             updated_at: c.updated_at ? new Date(c.updated_at) : null,
         }));
-    } catch {
+    } catch (e) {
+        // на всякий лог, чтобы один раз увидеть реальный тип raw
+        console.error('parseCategoriesJson failed. typeof:', typeof raw, 'sample:', String(raw).slice(0, 200));
         return [];
     }
 }

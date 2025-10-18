@@ -3,7 +3,7 @@ CREATE TABLE posts (
     author_id       CHAR(36)     NOT NULL,
     author_username VARCHAR(255) NOT NULL,
     title           VARCHAR(255) NOT NULL,
-    status          ENUM('active', 'inactive', 'hidden') NOT NULL DEFAULT 'active',
+    status          ENUM('active', 'closed') NOT NULL DEFAULT 'active',
 
     content    TEXT         NOT NULL,
     likes      INT          NOT NULL DEFAULT 0,
