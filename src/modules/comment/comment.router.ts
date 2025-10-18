@@ -17,6 +17,13 @@ commentRouter.post(
 );
 
 commentRouter.get(
+    "/",
+    async (req: Request, res: Response, next: NextFunction) => {
+        await commentController.listComments(req, res, next);
+    }
+);
+
+commentRouter.get(
     "/:comment_id",
     async (req: Request, res: Response, next: NextFunction) => {
         await commentController.getComment(req, res, next);

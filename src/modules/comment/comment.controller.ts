@@ -28,6 +28,8 @@ class CommentController {
             parent_id:  req.body?.parent_id,
         };
 
+        log.info("createComment called", { candidate });
+
         const parsed = CreateCommentSchema.safeParse(candidate);
         if (!parsed.success) {
             log.error("Validation error in createComment", { errors: parsed.error });

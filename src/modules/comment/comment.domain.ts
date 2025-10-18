@@ -11,6 +11,7 @@ import {
     UpdateCommentInput
 } from "./comment.dto";
 import {ForbiddenError, InternalError, NotFoundError, UnauthorizedError} from "../../api/errors";
+import {log} from "../../utils/logger/logger";
 
 export type CommentData = {
     id:              string;
@@ -75,7 +76,8 @@ export class CommentDomain {
     public async createComment(params: CreateCommentInput): Promise<Comment> {
         const user = await this.db.users().filterID(params.author_id).get();
         if (!user) {
-            throw new UnauthorizedError('Initiator ser not found');
+            log.info("Creating comment", { params });
+            throw new UnauthorizedError('Initiator are not found');
         }
 
         const post = await this.db.posts().filterID(params.post_id).get();
@@ -92,9 +94,9 @@ export class CommentDomain {
 
         const row = await this.db.comments().insert({
             id:              uuid(),
+            author_username: user.username,
             post_id:         params.post_id,
             author_id:       params.author_id,
-            author_username: user.username,
             parent_id:       params.parent_id || null,
             content:         params.content,
             created_at:      new Date(),

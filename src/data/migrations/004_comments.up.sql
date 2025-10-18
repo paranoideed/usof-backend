@@ -3,7 +3,6 @@ CREATE TABLE comments (
     post_id         CHAR(36)     NOT NULL,
     author_id       CHAR(36)     NOT NULL,
     author_username VARCHAR(255) NOT NULL,
-    user_id         CHAR(36)     NOT NULL,
     parent_id       CHAR(36)     DEFAULT NULL,
 
     content    VARCHAR(4096) NOT NULL,
@@ -24,7 +23,7 @@ CREATE TABLE comments (
 );
 
 CREATE INDEX idx_comment_post_id   ON comments (post_id);
-CREATE INDEX idx_comment_user_id   ON comments (user_id);
+CREATE INDEX idx_comment_author_id ON comments (author_id);
 CREATE INDEX idx_comment_parent_id ON comments (parent_id);
 
 CREATE TABLE comment_likes (
