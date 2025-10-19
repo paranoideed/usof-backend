@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid';
 import {database, Database} from "../../data/database";
 import {
     CreateCommentInput,
-    DeleteCommentInput,
+    DeleteCommentInput, DeleteLikeCommentInput,
     GetCommentInput,
     LikeCommentInput,
     ListCommentLikesInput,
@@ -76,7 +76,6 @@ export class CommentDomain {
     public async createComment(params: CreateCommentInput): Promise<Comment> {
         const user = await this.db.users().filterID(params.author_id).get();
         if (!user) {
-            log.info("Creating comment", { params });
             throw new UnauthorizedError('Initiator are not found');
         }
 
@@ -125,7 +124,10 @@ export class CommentDomain {
         }
         if (params.parent_id) {
             query = query.filterParentID(params.parent_id);
+        } else {
+            query = query.filterParentID(null);
         }
+
         if (params.author_username) {
             query = query.filterUsername(params.author_username);
         }
@@ -135,6 +137,7 @@ export class CommentDomain {
 
         const total = await query.count();
         let rows = await query.
+            orderByRating(false).
             page(params.limit, params.offset).
             selectWithDetails(params.initiator_id);
 
@@ -185,18 +188,30 @@ export class CommentDomain {
             throw new NotFoundError('Comment not found');
         }
 
-        if (params.type === 'remove') {
-            await this.db.commentLikes().filterCommentID(params.comment_id).filterAuthorID(params.author_id).delete();
-        } else {
-            await this.db.commentLikes().upsert({
-                id:              uuid(),
-                comment_id:      params.comment_id,
-                author_id:       params.author_id,
-                author_username: user.username,
-                type:            params.type,
-                created_at:      new Date(),
-            })
+        await this.db.commentLikes().upsert({
+            id:              uuid(),
+            comment_id:      params.comment_id,
+            author_id:       params.author_id,
+            author_username: user.username,
+            type:            params.type,
+            created_at:      new Date(),
+        })
+
+        return this.getComment({comment_id: params.comment_id})
+    }
+
+    public async deleteLike(params: DeleteLikeCommentInput): Promise<Comment> {
+        const user = await this.db.users().filterID(params.author_id).get();
+        if (!user) {
+            throw new NotFoundError('User not found');
         }
+
+        const comment = await this.db.comments().filterID(params.comment_id).get();
+        if (!comment) {
+            throw new NotFoundError('Comment not found');
+        }
+
+        await this.db.commentLikes().filterCommentID(params.comment_id).filterAuthorID(params.author_id).delete();
 
         return this.getComment({comment_id: params.comment_id})
     }

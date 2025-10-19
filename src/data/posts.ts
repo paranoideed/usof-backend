@@ -97,9 +97,8 @@ export default class PostsQ {
             const uid = String(userId);
             const raw = client.raw('l_me.author_id = ?', [uid]);
             q = q.leftJoin({ l_me: 'post_likes' }, function () {
-                // this: JoinClause — используем алиас 'p'
                 this.on('l_me.post_id', '=', 'p.id')
-                    .on(raw); // добавляем условие по author_id
+                    .on(raw);
             });
         }
 

@@ -5,7 +5,7 @@ import {CommentDomain} from "./comment.domain";
 import {MustRequestBody} from "../../api/decorators/request_body";
 import {
     CreateCommentSchema,
-    DeleteCommentSchema,
+    DeleteCommentSchema, DeleteLikeCommentSchema,
     GetCommentSchema, LikeCommentSchema, ListCommentLikesSchema,
     ListCommentsSchema,
     UpdateCommentSchema
@@ -50,7 +50,12 @@ class CommentController {
     }
 
     async getComment(req: Request, res: Response, next: NextFunction) {
-        const parsed = GetCommentSchema.safeParse(req.params);
+        let candidate = {
+            comment_id: req.params.comment_id,
+            initiator_id:    req.user?.id,
+        };
+
+        const parsed = GetCommentSchema.safeParse(candidate);
         if (!parsed.success) {
             log.error("Validation error in getComment", { errors: parsed.error });
 
@@ -163,11 +168,35 @@ class CommentController {
         }
 
         try {
-            const post = await this.domain.likeComment(parsed.data);
+            const comment = await this.domain.likeComment(parsed.data);
 
-            return res.status(200).json(post);
+            return res.status(200).json(comment);
         } catch (err) {
             log.error("Error in likeComment", { error: err });
+
+            next(err);
+        }
+    }
+
+    async deleteLike(req: Request, res: Response, next: NextFunction) {
+        const candidate = {
+            author_id:  req.user?.id,
+            comment_id: req.params?.comment_id,
+        }
+
+        const parsed = DeleteLikeCommentSchema.safeParse(candidate);
+        if (!parsed.success) {
+            log.error("Validation error in deleteLikeComment", { errors: parsed.error });
+
+            return res.status(400).json(z.treeifyError(parsed.error));
+        }
+
+        try {
+            const comment = await this.domain.deleteLike(parsed.data);
+
+            return res.status(204).json(comment);
+        } catch (err) {
+            log.error("Error in deleteLikeComment", { error: err });
 
             next(err);
         }

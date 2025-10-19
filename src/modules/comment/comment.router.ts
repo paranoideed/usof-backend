@@ -25,6 +25,7 @@ commentRouter.get(
 
 commentRouter.get(
     "/:comment_id",
+    authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         await commentController.getComment(req, res, next);
     }
@@ -51,6 +52,14 @@ commentRouter.post(
     authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         await commentController.like(req, res, next);
+    }
+);
+
+commentRouter.delete(
+    "/:comment_id/like",
+    authMiddleware,
+    async (req: Request, res: Response, next: NextFunction) => {
+        await commentController.deleteLike(req, res, next);
     }
 );
 

@@ -26,7 +26,12 @@ export const DeleteCommentSchema = z.object({
 export const LikeCommentSchema = z.object({
     author_id:  z.uuid(),
     comment_id: z.uuid(),
-    type:       z.enum(['like', 'dislike', 'remove']),
+    type:       z.enum(['like', 'dislike']),
+});
+
+export const DeleteLikeCommentSchema = z.object({
+    author_id:  z.uuid(),
+    comment_id: z.uuid(),
 });
 
 export const ListCommentsSchema = z.object({
@@ -53,6 +58,7 @@ export const ListCommentLikesSchema = z.object({
 export type CreateCommentInput    = z.infer<typeof CreateCommentSchema>;
 export type UpdateCommentInput    = z.infer<typeof UpdateCommentSchema>;
 export type LikeCommentInput      = z.infer<typeof LikeCommentSchema>;
+export type DeleteLikeCommentInput = z.infer<typeof DeleteLikeCommentSchema>;
 export type ListCommentsInput     = z.infer<typeof ListCommentsSchema>;
 export type ListCommentLikesInput = z.infer<typeof ListCommentLikesSchema>;
 export type DeleteCommentInput    = z.infer<typeof DeleteCommentSchema>;
