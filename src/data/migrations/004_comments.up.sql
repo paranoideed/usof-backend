@@ -5,6 +5,8 @@ CREATE TABLE comments (
     author_username VARCHAR(255) NOT NULL,
     parent_id       CHAR(36)     DEFAULT NULL,
 
+    replies_count INT NOT NULL DEFAULT 0,
+
     content    VARCHAR(4096) NOT NULL,
     likes      INT           NOT NULL DEFAULT 0,
     dislikes   INT           NOT NULL DEFAULT 0,
@@ -43,6 +45,29 @@ CREATE TABLE comment_likes (
             ON UPDATE CASCADE
             ON DELETE RESTRICT
 );
+
+CREATE TRIGGER trg_comments_ai
+    AFTER INSERT ON comments
+    FOR EACH ROW
+BEGIN
+    IF NEW.parent_id IS NOT NULL THEN
+    UPDATE comments
+    SET replies_count = replies_count + 1
+    WHERE id = NEW.parent_id;
+END IF;
+END;
+
+
+CREATE TRIGGER trg_comments_ad
+    AFTER DELETE ON comments
+    FOR EACH ROW
+BEGIN
+    IF OLD.parent_id IS NOT NULL THEN
+    UPDATE comments
+    SET replies_count = GREATEST(replies_count - 1, 0)
+    WHERE id = OLD.parent_id;
+END IF;
+END;
 
 CREATE TRIGGER trg_comment_likes_ai
     AFTER INSERT ON comment_likes

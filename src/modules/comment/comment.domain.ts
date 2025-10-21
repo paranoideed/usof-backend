@@ -19,11 +19,15 @@ export type CommentData = {
     author_id:       string;
     author_username: string;
     parent_id:       string | null;
-    content:         string;
-    likes:           number;
-    dislikes:        number;
-    created_at:      Date;
-    updated_at:      Date | null;
+
+    replies_count:   number;
+
+    content:  string;
+    likes:    number;
+    dislikes: number;
+
+    created_at: Date;
+    updated_at: Date | null;
 }
 
 export type Comment = {
@@ -91,20 +95,27 @@ export class CommentDomain {
             }
         }
 
-        const row = await this.db.comments().insert({
-            id:              uuid(),
-            author_username: user.username,
-            post_id:         params.post_id,
-            author_id:       params.author_id,
-            parent_id:       params.parent_id || null,
-            content:         params.content,
-            created_at:      new Date(),
-        });
-        if (!row) {
-            throw new InternalError('Failed to create comment');
-        }
+        const commID =  uuid()
+        await this.db.transaction(async (trx) => {
+            const row = await trx.comments.insert({
+                id:              commID,
+                author_username: user.username,
+                post_id:         params.post_id,
+                author_id:       params.author_id,
+                parent_id:       params.parent_id || null,
+                content:         params.content,
+                created_at:      new Date(),
+            });
+            if (!row) {
+                throw new InternalError('Failed to create comment');
+            }
 
-        return this.getComment({comment_id: row.id});
+            if (params.parent_id) {
+                 await trx.comments.filterID(params.parent_id).addReplies();
+            }
+        });
+
+        return this.getComment({comment_id: commID});
     }
 
     public async getComment(params: GetCommentInput): Promise<Comment> {
@@ -174,7 +185,18 @@ export class CommentDomain {
     public async deleteComment(params: DeleteCommentInput): Promise<void> {
         await this.checkRight(params.author_id, params.comment_id);
 
-        await this.db.comments().filterID(params.comment_id).delete();
+        const comment = await this.db.comments().filterID(params.comment_id).get();
+        if (!comment) {
+            throw new NotFoundError('Comment not found');
+        }
+
+        await this.db.transaction(async (trx) => {
+            if (comment.parent_id) {
+                await trx.comments.filterID(comment.parent_id).removeReplies();
+            }
+
+            await trx.comments.filterID(params.comment_id).delete();
+        });
     }
 
     public async likeComment(params: LikeCommentInput): Promise<Comment> {

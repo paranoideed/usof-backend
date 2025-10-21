@@ -117,7 +117,7 @@ export class CategoryDomain {
         }
 
         await this.db.transaction(async (transaction) => {
-            await transaction.posts.filterCategoriesAny([params.category_id]).delete();
+            await transaction.posts.filterCategory(params.category_id).delete();
             await transaction.categories.filterID(params.category_id).delete();
         })
 

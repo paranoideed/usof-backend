@@ -1,5 +1,4 @@
 import { Knex } from 'knex';
-import {log} from "../utils/logger/logger";
 
 export type CommentRow = {
     id:              string;
@@ -7,6 +6,8 @@ export type CommentRow = {
     author_id:       string;
     author_username: string;
     parent_id:       string | null;
+
+    replies_count:   number; // <-- NEW
 
     content:  string;
     likes:    number;
@@ -48,6 +49,9 @@ export default class CommentsQ {
             author_id:       params.author_id,
             author_username: params.author_username,
             parent_id:       params.parent_id ?? null,
+
+            replies_count:   0, // <-- DB всё равно дефолтнёт, но оставим для явности
+
             content:         params.content,
             likes:           0,
             dislikes:        0,
@@ -55,7 +59,6 @@ export default class CommentsQ {
             updated_at:      null,
         };
 
-        // ЯВНО указываем таблицу, чтобы алиас из this.builder не мешал
         await this.builder.client!.queryBuilder().table('comments').insert(data);
         return data;
     }
@@ -75,12 +78,14 @@ export default class CommentsQ {
         likes?:      number;
         dislikes?:   number;
         updated_at?: Date | null;
+        replies_count?: number;
     }): Promise<void> {
         const setMap: Partial<CommentRow> = {};
 
         if (Object.prototype.hasOwnProperty.call(set, 'content'))   setMap.content = set.content!;
         if (Object.prototype.hasOwnProperty.call(set, 'likes'))     setMap.likes = set.likes!;
         if (Object.prototype.hasOwnProperty.call(set, 'dislikes'))  setMap.dislikes = set.dislikes!;
+        if (Object.prototype.hasOwnProperty.call(set, 'replies_count')) setMap.replies_count = set.replies_count!;
         if (Object.prototype.hasOwnProperty.call(set, 'updated_at')) {
             setMap.updated_at = set.updated_at ?? null;
         } else {
@@ -88,6 +93,20 @@ export default class CommentsQ {
         }
 
         await this.builder.clone().update(setMap);
+    }
+
+    async addReplies(): Promise<void> {
+        await this.builder.clone().update({
+            replies_count: (this.builder.client as any).raw('?? + ?', ['replies_count', 1]),
+            updated_at: new Date(),
+        });
+    }
+
+    async removeReplies(): Promise<void> {
+        await this.builder.clone().update({
+            replies_count: (this.builder.client as any).raw('GREATEST(?? - ?, 0)', ['replies_count', Math.max(1, -1)]),
+            updated_at: new Date(),
+        });
     }
 
     async delete(): Promise<void> {
@@ -114,6 +133,7 @@ export default class CommentsQ {
             this.C('author_id'),
             this.C('author_username'),
             this.C('parent_id'),
+            this.C('replies_count'), // <-- NEW
             this.C('content'),
             this.C('likes'),
             this.C('dislikes'),
@@ -132,6 +152,9 @@ export default class CommentsQ {
             author_id: row.author_id,
             author_username: row.author_username,
             parent_id: row.parent_id,
+
+            replies_count: row.replies_count, // <-- NEW
+
             content: row.content,
             likes: row.likes,
             dislikes: row.dislikes,
@@ -164,6 +187,7 @@ export default class CommentsQ {
             this.C('author_id'),
             this.C('author_username'),
             this.C('parent_id'),
+            this.C('replies_count'), // <-- NEW
             this.C('content'),
             this.C('likes'),
             this.C('dislikes'),
@@ -182,6 +206,9 @@ export default class CommentsQ {
                 author_id: row.author_id,
                 author_username: row.author_username,
                 parent_id: row.parent_id,
+
+                replies_count: row.replies_count, // <-- NEW
+
                 content: row.content,
                 likes: row.likes,
                 dislikes: row.dislikes,
@@ -192,7 +219,7 @@ export default class CommentsQ {
         }));
     }
 
-    // !!! Обнови фильтры и сортировки на алиас, как в PostsQ:
+    // ---- фильтры/сортировки ----
     filterID(id: string): this {
         this.builder = this.builder.where(this.C('id'), id);
         this.counter = this.counter.where(this.C('id'), id);
@@ -244,13 +271,19 @@ export default class CommentsQ {
         return this;
     }
 
+    // при желании — сортировка по количеству прямых ответов
+    orderByReplies(asc = false): this {
+        this.builder = this.builder.orderBy(this.C('replies_count'), asc ? 'asc' : 'desc');
+        return this;
+    }
+
     page(limit: number, offset = 0): this {
         this.builder = this.builder.limit(limit).offset(offset);
         return this;
     }
 
     async count(): Promise<number> {
-        const row: any = await this.counter.clone().clearOrder?.().count({ cnt: '*' }).first();
+        const row: any = await (this.counter.clone() as any).clearOrder?.().count({ cnt: '*' }).first();
         const val = row?.cnt ?? row?.['count(*)'] ?? Object.values(row ?? { 0: 0 })[0] ?? 0;
         return Number(val);
     }
