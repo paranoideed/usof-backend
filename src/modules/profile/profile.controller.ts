@@ -5,10 +5,11 @@ import log from "../../utils/logger";
 
 import {
     GetProfileSchema,
-    GetProfilesSchema,
+    GetProfilesSchema, UpdateAvatarSchema,
     UpdateProfileSchema,
 } from "./profile.dto";
 import ProfileDomain from "./profile.domain";
+import {putUserAvatarPNG} from "../../stprage/s3";
 
 export default class ProfileController {
     private domain: ProfileDomain;
@@ -98,7 +99,6 @@ export default class ProfileController {
             user_id:   req.user.id,
             username:  req.body?.username,
             pseudonym: req.body?.pseudonym,
-            avatar:    req.body?.avatar,
         }
 
         const parsed = UpdateProfileSchema.safeParse(candidate);
@@ -115,6 +115,58 @@ export default class ProfileController {
         } catch (err) {
             log.error("Error in updateProfile", { error: err });
 
+            next(err);
+        }
+    }
+
+    async uploadAvatar(req: Request, res: Response, next: NextFunction) {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const candidate = {
+            user_id: req.user.id,
+            avatar:  req.file,
+        }
+
+        const parsed = UpdateAvatarSchema.safeParse(candidate);
+        if (!parsed.success) {
+            log.error("Validation error in uploadAvatar", { errors: parsed.error });
+
+            return res.status(400).json(z.treeifyError(parsed.error));
+        }
+
+        try {
+            const file = (req as any).file as { mimetype: string; size: number; buffer: Buffer } | undefined;
+            if (!file) {
+                return res.status(400).json({ message: "File 'avatar' is required" });
+            }
+
+            if (file.mimetype !== "image/png") {
+                return res.status(415).json({ message: "Only PNG is allowed" });
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                return res.status(413).json({ message: "Max size is 10MB" });
+            }
+
+            const user = await this.domain.updateAvatar(parsed.data);
+            if (!user) {
+                return res.status(404).json({ message: "User not found" });
+            }
+
+            const { url, key } = await putUserAvatarPNG(String(req.user.id), file.buffer);
+            const bustUrl = `${url}?v=${Date.now()}`;
+
+            return res.status(200).json({ ok: true, key, url: bustUrl });
+        } catch (err: any) {
+            log.error("Error in uploadAvatar", { error: err });
+
+            if (err?.message?.includes("File too large")) {
+                return res.status(413).json({ message: "Max size is 10MB" });
+            }
+            if (err?.message?.includes("Only image/png")) {
+                return res.status(415).json({ message: "Only PNG is allowed" });
+            }
             next(err);
         }
     }

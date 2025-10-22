@@ -2,7 +2,7 @@ import database, {Database} from '../../data/database';
 
 import {
     GetProfileInput,
-    GetProfilesInput,
+    GetProfilesInput, UpdateAvatarInput,
     UpdateProfileInput,
 } from "./profile.dto";
 import {NotFoundError} from "../../api/errors";
@@ -78,7 +78,6 @@ export default class ProfileDomain {
         const patch: { username?: string; pseudonym?: string | null ; avatar?: string | null ; updated_at?: Date } = {};
         if (Object.prototype.hasOwnProperty.call(params, 'username'))  patch.username = params.username!;
         if (Object.prototype.hasOwnProperty.call(params, 'pseudonym')) patch.pseudonym = params.pseudonym;
-        if (Object.prototype.hasOwnProperty.call(params, 'avatar'))    patch.avatar = params.avatar;
         patch.updated_at = new Date();
 
         await this.db.users().filterID(params.user_id).update(patch);
@@ -89,5 +88,34 @@ export default class ProfileDomain {
         }
 
         return updated;
+    }
+
+    async updateAvatar(params: UpdateAvatarInput): Promise<Profile> {
+        const user = await this.db.users().filterID(params.user_id).get();
+        if (!user) {
+            throw new NotFoundError('User not found');
+        }
+
+        const patch: { avatar?: string | null ; updated_at?: Date } = {};
+        if (Object.prototype.hasOwnProperty.call(params, 'file'))  patch.avatar = params.avatar.path;
+        patch.updated_at = new Date();
+
+        await this.db.users().filterID(params.user_id).update(patch);
+
+        const updated = await this.db.users().filterID(params.user_id).get();
+        if (!updated) {
+            throw new NotFoundError('User not found after avatar update');
+        }
+
+        return updated;
+    }
+
+    async deleteProfile(user_id: string): Promise<void> {
+        const user = await this.db.users().filterID(user_id).get();
+        if (!user) {
+            throw new NotFoundError('User not found');
+        }
+
+        await this.db.users().filterID(user_id).delete();
     }
 }

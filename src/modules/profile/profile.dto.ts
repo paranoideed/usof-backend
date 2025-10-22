@@ -40,7 +40,6 @@ export const UpdateProfileSchema = z.object({
         message: "Username can only contain letters, numbers, and -._!",
     }).optional(),
     pseudonym: z.string().max(512).nullable().optional(),
-    avatar:    z.url().max(2048).nullable().optional(),
 }).superRefine((data, ctx) => {
     const hasChanges =
         Object.prototype.hasOwnProperty.call(data, "username") ||
@@ -51,6 +50,17 @@ export const UpdateProfileSchema = z.object({
     }
 });
 
+export const DeleteProfileSchema = z.object({
+    user_id: z.uuid(),
+});
+
+export const UpdateAvatarSchema = z.object({
+    user_id: z.uuid(),
+    avatar:  z.object({}).refine((file) => file !== undefined, { message: "Avatar file is required" }),
+});
+
 export type GetProfileInput    = z.infer<typeof GetProfileSchema>;
 export type GetProfilesInput   = z.infer<typeof GetProfilesSchema>;
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
+export type UpdateAvatarInput  = z.infer<typeof UpdateAvatarSchema>;
+export type DeleteProfileInput = z.infer<typeof DeleteProfileSchema>;

@@ -5,6 +5,7 @@ import express, {
 } from "express";
 import ProfileController from "./profile.controller";
 import authMiddleware from "../../api/middlewares/auth";
+import uploadAvatarMiddleware from "../../api/middlewares/avatar";
 
 const profileRouter = express.Router();
 const profileController = new ProfileController();
@@ -22,6 +23,15 @@ profileRouter.post(
     authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         await profileController.updateProfile(req, res, next);
+    }
+);
+
+profileRouter.post(
+    "/me/avatar",
+    authMiddleware,
+    uploadAvatarMiddleware,
+    async (req: Request, res: Response, next: NextFunction) => {
+        await profileController.uploadAvatar(req, res, next);
     }
 );
 
