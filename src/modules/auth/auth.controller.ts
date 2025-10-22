@@ -79,7 +79,13 @@ export class AuthController {
 
     @MustRequestBody()
     async resetPassword(req: Request, res: Response, next: NextFunction) {
-        const parsed = ResetPassword.safeParse(req.body);
+
+        const candidate = {
+            user_id:      req.user?.id,
+            new_password: req.body.new_password,
+        }
+
+        const parsed = ResetPassword.safeParse(candidate);
         if (!parsed.success) {
             log.error("Validation error in resetPassword", { errors: parsed.error });
 
@@ -87,7 +93,7 @@ export class AuthController {
         }
 
         try {
-            await this.domain.resetPassword(req.body);
+            await this.domain.resetPassword(parsed.data);
 
             return res.status(200).json({ message: "Password reset successfully" });
         } catch (err) {

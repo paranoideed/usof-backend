@@ -47,13 +47,8 @@ export const LoginSchema = z.object({
 });
 
 export const ResetPassword = z.object({
-    email: z.email().max(256),
-    username: z.string().min(3).max(32).regex(usernameRegex, {
-        message: usernameError,
-    }),
-
-    oldPassword: z.string().min(6).max(64),
-    newPassword: z.string().min(6).max(64).regex(passwordRegex, {
+    user_id:     z.uuid(),
+    new_password: z.string().min(6).max(64).regex(passwordRegex, {
         message: passwordError,
     }),
 });

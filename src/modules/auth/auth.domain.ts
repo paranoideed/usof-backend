@@ -66,17 +66,12 @@ export class AuthDomain {
     }
 
     async resetPassword(params: ResetPasswordInput): Promise<void> {
-        const user = await this.db.users().filterUsername(params.username).filterEmail(params.email).get();
+        const user = await this.db.users().filterID(params.user_id).get();
         if (!user) {
             throw new UnauthorizedError('User not found');
         }
 
-        const isValid = await this.hasher.verifyPassword(params.oldPassword, user.password_hash);
-        if (!isValid) {
-            throw new ForbiddenError('Invalid old password');
-        }
-
-        const newHash = await this.hasher.hashPassword(params.newPassword);
+        const newHash = await this.hasher.hashPassword(params.new_password);
 
         await this.db.users().filterID(user.id).update({
             password_hash: newHash,

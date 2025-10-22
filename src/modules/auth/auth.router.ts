@@ -4,6 +4,7 @@ import express, {
     type Response
 } from "express";
 import { authController } from "./auth.controller.js";
+import {authMiddleware} from "../../api/middlewares/auth";
 
 const authRouter = express.Router();
 
@@ -14,7 +15,7 @@ authRouter.post(
 );
 
 authRouter.post(
-    "admin/register",
+    "/admin/register",
     (req: Request, res: Response, next: NextFunction) =>
         authController.registerByAdmin(req, res, next)
 );
@@ -36,6 +37,7 @@ authRouter.post(
 
 authRouter.post(
     "/reset-password",
+    authMiddleware,
     (req: Request, res: Response, next: NextFunction) =>
         authController.resetPassword(req, res, next)
 );
