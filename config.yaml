@@ -5,13 +5,15 @@ server:
     level: "debug"
 
 jwt:
-  ttl: 2678400 # 1 month in seconds
+  ttl: 2678400
   secret_key: "suppersecretkey"
 
 database:
   sql:
-    host: "localhost"
-    port: 5678
+#    host: "localhost"
+#    port: 5678
+    host: "usof-mysql"
+    port: 3306
     user: "usof"
     name: "usof"
     password: "password"

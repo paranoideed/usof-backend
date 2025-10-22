@@ -1,14 +1,12 @@
 import { Database } from "./data/database";
-import Config from "./utils/config/config";
+import {config} from "./utils/config/config";
 import {App} from "./app";
 import {log} from "./utils/logger/logger";
 
 export default class Cli {
     static async Run(args: string[] = []): Promise<boolean> {
         const [command, subcommand] = args;
-
-        const cfg = Config.load("./config.yaml");
-        const db = new Database(cfg.database.sql);
+        const db = new Database(config.database.sql);
 
         switch (`${command} ${subcommand || ''}`.trim()) {
             case 'migrate up':
@@ -24,7 +22,6 @@ export default class Cli {
                 break;
 
             case 'service run': {
-                // TODO: запуск сервиса
                 log.info('Service is running. Press Ctrl+C to stop.');
                 const app = new App();
                 await app.run();
@@ -46,4 +43,3 @@ export default class Cli {
         return true;
     }
 }
-

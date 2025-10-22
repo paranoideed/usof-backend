@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { NextFunction, Request, Response } from "express";
 
-import {MustRequestBody} from "../../api/decorators/request_body";
+
 import {log} from "../../utils/logger/logger";
 
 import {AuthDomain} from "./auth.domain";
@@ -15,11 +15,16 @@ export class AuthController {
         this.domain = new AuthDomain();
     }
 
-    @MustRequestBody()
+    
     async register(req: Request, res: Response, next: NextFunction) {
-        req.body.role = "user";
+        const candidate = {
+            email:    req.body.email,
+            username: req.body.username,
+            password: req.body.password,
+            role:     "user",
+        };
 
-        const parsed = RegisterSchema.safeParse(req.body);
+        const parsed = RegisterSchema.safeParse(candidate);
         if (!parsed.success) {
             log.error("Validation error in register", { errors: parsed.error });
 
@@ -27,7 +32,7 @@ export class AuthController {
         }
 
         try {
-            await this.domain.register(req.body);
+            await this.domain.register(parsed.data);
 
             return res.status(201).json({ message: "User registered successfully" });
         } catch (err) {
@@ -37,9 +42,16 @@ export class AuthController {
         }
     }
 
-    @MustRequestBody()
+    
     async registerByAdmin(req: Request, res: Response, next: NextFunction) {
-        const parsed = RegisterSchema.safeParse(req.body);
+        const candidate = {
+            email:    req.body.email,
+            username: req.body.username,
+            password: req.body.password,
+            role:     req.body.role,
+        };
+
+        const parsed = RegisterSchema.safeParse(candidate);
         if (!parsed.success) {
             log.error("Validation error in registerByAdmin", { errors: parsed.error });
 
@@ -47,7 +59,7 @@ export class AuthController {
         }
 
         try {
-            await this.domain.register(req.body);
+            await this.domain.register(parsed.data);
 
             return res.status(201).json({ message: "Admin registered successfully" });
         } catch (err) {
@@ -57,8 +69,14 @@ export class AuthController {
         }
     }
 
-    @MustRequestBody()
+    
     async login(req: Request, res: Response, next: NextFunction) {
+        const candidate = {
+            email:    req.body.email,
+            username: req.body.username,
+            password: req.body.password,
+        };
+
         const parsed = LoginSchema.safeParse(req.body);
         if (!parsed.success) {
             log.error("Validation error in login", { errors: parsed.error });
@@ -67,7 +85,7 @@ export class AuthController {
         }
 
         try {
-            const result = await this.domain.login(req.body);
+            const result = await this.domain.login(parsed.data);
 
             return res.status(200).json(result);
         } catch (err) {
@@ -77,9 +95,8 @@ export class AuthController {
         }
     }
 
-    @MustRequestBody()
+    
     async resetPassword(req: Request, res: Response, next: NextFunction) {
-
         const candidate = {
             user_id:      req.user?.id,
             new_password: req.body.new_password,

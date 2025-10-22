@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { NextFunction, Request, Response } from "express";
 
 import {ProfileDomain} from "./profile.domain";
-import {MustRequestBody} from "../../api/decorators/request_body";
+
 import {GetProfileSchema, GetProfilesSchema, UpdateProfileSchema} from "./profile.dto";
 import {log} from "../../utils/logger/logger";
 
@@ -26,7 +26,7 @@ class ProfileController {
         }
 
         try {
-            const user = await this.domain.getProfile(candidate);
+            const user = await this.domain.getProfile(parsed.data);
 
             return res.status(200).json(user);
         } catch (err) {
@@ -50,7 +50,7 @@ class ProfileController {
         }
 
         try {
-            const user = await this.domain.getProfile(candidate);
+            const user = await this.domain.getProfile(parsed.data);
 
             return res.status(200).json(user);
         } catch (err) {
@@ -85,7 +85,7 @@ class ProfileController {
         }
     }
 
-    @MustRequestBody()
+    
     async updateProfile(req: Request, res: Response, next: NextFunction) {
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized" });
@@ -106,7 +106,7 @@ class ProfileController {
         }
 
         try {
-            const user = await this.domain.updateProfile(candidate);
+            const user = await this.domain.updateProfile(parsed.data);
 
             return res.status(200).json(user);
         } catch (err) {

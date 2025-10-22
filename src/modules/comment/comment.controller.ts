@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { NextFunction, Request, Response } from "express";
 
 import {CommentDomain} from "./comment.domain";
-import {MustRequestBody} from "../../api/decorators/request_body";
+
 import {
     CreateCommentSchema,
     DeleteCommentSchema, DeleteLikeCommentSchema,
@@ -19,7 +19,7 @@ class CommentController {
         this.domain = new CommentDomain();
     }
 
-    @MustRequestBody()
+    
     async createComment(req: Request, res: Response, next: NextFunction) {
         const candidate = {
             author_id:  req.user?.id,
@@ -38,7 +38,7 @@ class CommentController {
         }
 
         try {
-            const comment = await this.domain.createComment(req.body);
+            const comment = await this.domain.createComment(parsed.data);
 
             return res.status(201).json(comment);
         }
@@ -75,7 +75,18 @@ class CommentController {
     }
 
     async listComments(req: Request, res: Response, next: NextFunction) {
-        const parsed = ListCommentsSchema.safeParse(req.query);
+        const candidate = {
+            initiator_id:    req.user?.id,
+            post_id:         req.query?.post_id,
+            author_id:       req.query?.author_id,
+            author_username: req.query?.author_username,
+            parent_id:       req.query?.parent_id,
+
+            offset:  req.query?.offset,
+            limit:   req.query?.limit,
+        }
+
+        const parsed = ListCommentsSchema.safeParse(candidate);
         if (!parsed.success) {
             log.error("Validation error in listComments", { errors: parsed.error });
 
@@ -102,7 +113,7 @@ class CommentController {
         }
     }
 
-    @MustRequestBody()
+    
     async updateComment(req: Request, res: Response, next: NextFunction) {
         const candidate = {
             comment_id: req.params.comment_id,
@@ -141,6 +152,7 @@ class CommentController {
 
             return res.status(400).json(z.treeifyError(parsed.error));
         }
+
         try {
             await this.domain.deleteComment(parsed.data);
 

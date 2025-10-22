@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { NextFunction, Request, Response } from "express";
 
 import {log} from "../../utils/logger/logger";
-import {MustRequestBody} from "../../api/decorators/request_body";
+
 
 import {CategoryDomain} from "./category.domain";
 import {
@@ -20,9 +20,14 @@ class CategoryController {
         this.domain = new CategoryDomain();
     }
 
-    @MustRequestBody()
+    
     async createCategory(req: Request, res: Response, next: NextFunction) {
-        const parsed = CreateCategorySchema.safeParse(req.body);
+        const candidate = {
+            title:       req.body?.title,
+            description: req.body?.description,
+        };
+
+        const parsed = CreateCategorySchema.safeParse(candidate);
         if (!parsed.success) {
             log.error("Validation error in createCategory", { errors: parsed.error });
 
@@ -30,7 +35,7 @@ class CategoryController {
         }
 
         try {
-            const category = await this.domain.createCategory(req.body);
+            const category = await this.domain.createCategory(parsed.data);
 
             return res.status(201).json(category);
         } catch (err) {
@@ -41,7 +46,12 @@ class CategoryController {
     }
 
     async listCategories(req: Request, res: Response, next: NextFunction) {
-        const parsed = ListCategoriesSchema.safeParse(req.query);
+        const candidate = {
+            limit:  req.query.limit,
+            offset: req.query.offset,
+        };
+
+        const parsed = ListCategoriesSchema.safeParse(candidate);
         if (!parsed.success) {
             log.error("Validation error in listCategories", { errors: parsed.error });
 
@@ -65,7 +75,11 @@ class CategoryController {
     }
 
     async getCategory(req: Request, res: Response, next: NextFunction) {
-        const parsed = GetCategorySchema.safeParse(req.params);
+        const candidate = {
+            category_id: req.params?.category_id,
+        }
+
+        const parsed = GetCategorySchema.safeParse(candidate);
         if (!parsed.success) {
             log.error("Validation error in getCategory", { errors: parsed.error });
 
@@ -85,7 +99,7 @@ class CategoryController {
         }
     }
 
-    @MustRequestBody()
+    
     async updateCategory(req: Request, res: Response, next: NextFunction) {
         const candidate = {
             category_id: req.params.category_id,
@@ -101,7 +115,7 @@ class CategoryController {
         }
 
         try {
-            const category = await this.domain.updateCategory(candidate);
+            const category = await this.domain.updateCategory(parsed.data);
 
             return res.status(200).json(category);
         } catch (err) {
@@ -124,7 +138,7 @@ class CategoryController {
         }
 
         try {
-            await this.domain.deleteCategory(candidate);
+            await this.domain.deleteCategory(parsed.data);
 
             return res.status(204).send();
         } catch (err) {

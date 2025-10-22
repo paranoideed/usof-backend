@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import { argv, exit } from 'node:process';
 import Cli from './cli'; // расширение .ts не пишем — tsc подставит
 

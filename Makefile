@@ -2,19 +2,22 @@ API_SRC       := ./openapi/api.yaml
 API_BUNDLED   := ./openapi/api-bundled.yaml
 OUTPUT_DIR    := ./openapi/web
 GEN_DIR       := ./src/generated/openapi
+CONFIG_FILE   := ./config.yaml
 
-migrate-up:
-	npx tsx src/index.ts migrate up
+.PHONY: build-js start-js migrate-up-js migrate-down-js
 
-migrate-down:
-	npx tsx src/index.ts migrate down
+build-js:
+	KV_VIPER_FILE=$(CONFIG_FILE)
+	rm -rf dist
+	npx tsc -p tsconfig.json
+	mkdir -p dist
+	printf '{\n  "type": "commonjs"\n}\n' > dist/package.json
 
-openapi-gen:
-	npx tsx penapi-generator-cli generate \
-	-i $(API_BUNDLED) \
-	-g typescript-fetch \
-	-o $(GEN_DIR) \
-	--global-property models,modelDocs=false,apiDocs=false,apis=false,supportingFiles=false
+start-js:
+	KV_VIPER_FILE=$(CONFIG_FILE) node dist/index.js service run
 
-run-server:
-	npx tsx src/index.ts service run
+migrate-up-js:
+	KV_VIPER_FILE=$(CONFIG_FILE) node dist/index.js migrate up
+
+migrate-down-js:
+	KV_VIPER_FILE=$(CONFIG_FILE) node dist/index.js migrate down

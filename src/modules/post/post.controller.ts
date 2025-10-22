@@ -3,7 +3,7 @@ import type { NextFunction, Request, Response } from "express";
 
 import {log} from "../../utils/logger/logger";
 import {PostDomain} from "./post.domain";
-import {MustRequestBody} from "../../api/decorators/request_body";
+
 import {
     UpdatePostStatusSchema,
     CreatePostSchema, DeleteLikePostSchema,
@@ -22,7 +22,7 @@ class PostController {
         this.domain = new PostDomain();
     }
 
-    @MustRequestBody()
+    
     async createPost(req: Request, res: Response, next: NextFunction) {
         const candidate = {
             author_id:  req.user?.id,
@@ -76,8 +76,6 @@ class PostController {
     }
 
     async listPosts(req: Request, res: Response, next: NextFunction) {
-        log.info("ListPosts req.query ", req.query);
-
         const candidate = {
             user_id:         req.query?.user_id,
             status:          req.query?.status,
@@ -91,15 +89,13 @@ class PostController {
 
         const parsed = ListPostsSchema.safeParse(candidate);
         if (!parsed.success) {
-            // log.error("Validation error in listPosts", { errors: parsed.error });
+            log.error("Validation error in listPosts", { errors: parsed.error });
 
             return res.status(400).json(z.treeifyError(parsed.error));
         }
 
         try {
             const posts = await this.domain.listPosts(parsed.data);
-
-            // log.info("ListPosts posts ", posts);
 
             return res.status(200).json(posts);
         } catch (err) {
@@ -109,7 +105,7 @@ class PostController {
         }
     }
 
-    @MustRequestBody()
+    
     async updatePost(req: Request, res: Response, next: NextFunction) {
         const candidate = {
             post_id:      req.params?.post_id,
@@ -139,7 +135,7 @@ class PostController {
         }
     }
 
-    @MustRequestBody()
+    
     async updatePostStatus(req: Request, res: Response, next: NextFunction) {
         const candidate = {
             initiator_id:   req.user?.id,

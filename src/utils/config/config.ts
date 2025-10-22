@@ -3,7 +3,7 @@ import path from 'path';
 import yaml from 'js-yaml';
 
 function req<T>(v: T | undefined | null, key: string): T {
-    if (v === undefined || v === null || v === '') {
+    if (v === undefined || v === null || v === '' || (typeof v === 'number' && isNaN(v))) {
         throw new Error(`Missing required config: ${key}`);
     }
     return v;
@@ -57,30 +57,58 @@ export default class Config {
         };
     };
 
+    // --- ИЗМЕНЕНИЕ ЗДЕСЬ: ЗАМЕНИ СТАРЫЙ КОНСТРУКТОР НА ЭТОТ ---
     constructor(raw: RawConfig) {
+        // 1. Устанавливаем значения из YAML-файла (или 'undefined', если в файле их нет)
         this.server = {
-            host: req(raw.server.host, 'server.host'),
-            port: req(raw.server.port, 'server.port'),
+            host: raw.server?.host,
+            port: raw.server?.port,
             logging: {
-                level:  req(raw.server.logging.level, 'server.logging.level'),
+                level:  raw.server?.logging?.level,
             },
         };
 
         this.jwt = {
-            ttl:       req(raw.jwt.ttl, 'jwt.ttl'),
-            secretKey: req(raw.jwt.secret_key, 'jwt.secret_key'),
+            ttl:       raw.jwt?.ttl,
+            secretKey: raw.jwt?.secret_key,
         };
 
         this.database = {
             sql: {
-                host:     req(raw.database.sql.host, 'data.sql.host'),
-                port:     req(raw.database.sql.port, 'data.sql.port'),
-                user:     req(raw.database.sql.user, 'data.sql.profile'),
-                password: req(raw.database.sql.password, 'data.sql.password'),
-                name:     req(raw.database.sql.name, 'data.sql.name'),
+                host:     raw.database?.sql?.host,
+                port:     raw.database?.sql?.port,
+                user:     raw.database?.sql?.user,
+                password: raw.database?.sql?.password,
+                name:     raw.database?.sql?.name,
             },
         };
+
+        // 2. Перезаписываем значениями из Environment (переменных окружения)
+        // (Именно эти переменные приходят из docker-compose.yml)
+        this.server.port = Number(process.env.PORT) || this.server.port;
+
+        this.database.sql.host = process.env.DB_HOST || this.database.sql.host;
+        this.database.sql.port = Number(process.env.DB_PORT) || this.database.sql.port;
+        this.database.sql.user = process.env.DB_USER || this.database.sql.user;
+        this.database.sql.password = process.env.DB_PASSWORD || this.database.sql.password;
+        this.database.sql.name = process.env.DB_DATABASE || this.database.sql.name;
+
+        // 3. Теперь, когда все значения собраны, проверяем обязательные
+        this.server.host = req(this.server.host, 'server.host');
+        this.server.port = req(this.server.port, 'server.port');
+        this.server.logging.level = req(this.server.logging.level, 'server.logging.level');
+
+        this.jwt.ttl = req(this.jwt.ttl, 'jwt.ttl');
+        this.jwt.secretKey = req(this.jwt.secretKey, 'jwt.secret_key');
+
+        this.database.sql.host = req(this.database.sql.host, 'database.sql.host');
+        this.database.sql.port = req(this.database.sql.port, 'database.sql.port');
+        this.database.sql.user = req(this.database.sql.user, 'database.sql.user');
+        this.database.sql.password = req(this.database.sql.password, 'database.sql.password');
+        this.database.sql.name = req(this.database.sql.name, 'database.sql.name');
     }
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
 
     /**
      * Download YAML config file and parse it into Config object
@@ -91,13 +119,30 @@ export default class Config {
         const absPath = path.isAbsolute(filePath)
             ? filePath
             : path.resolve(process.cwd(), filePath);
-        const text = fs.readFileSync(absPath, 'utf8');
-        const raw = yaml.load(text) as RawConfig;
+
+        let raw: RawConfig;
+        try {
+            const text = fs.readFileSync(absPath, 'utf8');
+            raw = yaml.load(text) as RawConfig;
+        } catch (e) {
+            console.warn(`[Config] Config file is not set: ${absPath}`);
+            raw = {
+                server: { logging: {} },
+                jwt: {},
+                database: { sql: {} }
+            } as any;
+        }
 
         return new Config(raw);
     }
 }
 
-const configPath: string = process.env.KV_VIPER_FILE || './config.yaml';
+const configPath  = process.env.KV_VIPER_FILE;
+
+if (!configPath) {
+    console.error("[FATAL] 'KV_VIPER_FILE' is null.");
+    console.error("Set 'KV_VIPER_FILE' environment variable to the path of the config YAML file.");
+    process.exit(1);
+}
 
 export const config = Config.load(configPath);

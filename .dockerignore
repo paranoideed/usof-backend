@@ -1,0 +1,14 @@
+# Игнорируем зависимости
+node_modules
+
+# Игнорируем скомпилированный код (мы его внутри соберем)
+dist
+
+# Игнорируем Git
+.git
+.gitignore
+
+# Игнорируем файлы Docker
+Dockerfile
+docker-compose.yml
+.dockerignore

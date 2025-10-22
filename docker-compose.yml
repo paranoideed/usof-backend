@@ -1,4 +1,4 @@
-version: "3.9"
+version: "3.9" # Этот 'version' можно удалить, он устарел
 
 services:
   mysql:
@@ -25,6 +25,29 @@ services:
       retries: 20
     volumes:
       - usof_mysql_data:/var/lib/mysql
+    networks:
+      - usof-net
+
+  backend:
+    build: .
+    container_name: usof-backend
+    restart: unless-stopped
+    ports:
+      - "8815:8080"
+    environment:
+      KV_VIPER_FILE: /app/config.yaml
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    networks:
+      - usof-net
 
 volumes:
   usof_mysql_data:
+
+networks:
+  usof-net:
+    driver: bridge
+
