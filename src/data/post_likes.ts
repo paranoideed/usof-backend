@@ -1,13 +1,11 @@
 import { Knex } from 'knex';
 
-export type PostReactionType = 'like' | 'dislike';
-
 export type PostLikeRow = {
     id:              string;
     post_id:         string;
     author_id:       string;
     author_username: string;
-    type:            PostReactionType;
+    type:            'like' | 'dislike';
     created_at:      Date;
 };
 
@@ -25,7 +23,7 @@ export default class PostLikesQ {
         post_id:         string;
         author_id:       string;
         author_username: string;
-        type:            PostReactionType;
+        type:            'like' | 'dislike';
         created_at:      Date;
     }): Promise<PostLikeRow> {
         const data: PostLikeRow = {
@@ -52,7 +50,7 @@ export default class PostLikesQ {
         return rows ?? []
     }
 
-    async update(set: { type?: PostReactionType }): Promise<void> {
+    async update(set: { type?:  'like' | 'dislike' }): Promise<void> {
         const setMap: Partial<PostLikeRow> = {};
         if (Object.prototype.hasOwnProperty.call(set, 'type')) setMap.type = set.type!;
         await this.builder.clone().update(setMap);
@@ -86,7 +84,7 @@ export default class PostLikesQ {
         return this;
     }
 
-    filterType(type: PostReactionType): this {
+    filterType(type: string): this {
         this.builder = this.builder.where('type', type);
         this.counter = this.counter.where('type', type);
         return this;

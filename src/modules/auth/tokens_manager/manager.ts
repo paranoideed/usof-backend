@@ -1,5 +1,5 @@
 import jwt, { JwtPayload, Secret, SignOptions } from "jsonwebtoken";
-import {config} from "../../../utils/config/config";
+import config from "../../../utils/config";
 
 export interface TokenData {
     sub:  string;

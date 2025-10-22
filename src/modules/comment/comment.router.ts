@@ -3,10 +3,11 @@ import express, {
     type Request,
     type Response
 } from "express";
-import { commentController } from "./comment.controller.js";
-import {authMiddleware} from "../../api/middlewares/auth";
+import CommentController from "./comment.controller.js";
+import authMiddleware from "../../api/middlewares/auth";
 
 const commentRouter = express.Router();
+const commentController = new CommentController();
 
 commentRouter.post(
     "/",
@@ -71,4 +72,4 @@ commentRouter.get(
     }
 );
 
-export { commentRouter };
+export default commentRouter;

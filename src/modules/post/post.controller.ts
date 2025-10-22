@@ -1,8 +1,7 @@
 import { z } from "zod";
 import type { NextFunction, Request, Response } from "express";
 
-import {log} from "../../utils/logger/logger";
-import {PostDomain} from "./post.domain";
+import log from "../../utils/logger";
 
 import {
     UpdatePostStatusSchema,
@@ -14,8 +13,9 @@ import {
     ListPostsSchema,
     UpdatePostSchema,
 } from "./post.dto";
+import PostDomain from "./post.domain";
 
-class PostController {
+export default class PostController {
     private domain: PostDomain;
 
     constructor() {
@@ -134,7 +134,6 @@ class PostController {
             next(err);
         }
     }
-
     
     async updatePostStatus(req: Request, res: Response, next: NextFunction) {
         const candidate = {
@@ -263,5 +262,3 @@ class PostController {
         }
     }
 }
-
-export const postController = new PostController();

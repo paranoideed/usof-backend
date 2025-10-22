@@ -1,7 +1,7 @@
 import { v4 as uuid } from 'uuid';
 
-import {database, Database} from '../../data/database';
-import { CategoryRow } from "../../data/categories";
+import database, {Database} from '../../data/database';
+
 import {
     GetCategoryInput,
     CreateCategoryInput,
@@ -27,7 +27,7 @@ export type CategoryList = {
     };
 };
 
-export class CategoryDomain {
+export default class CategoryDomain {
     private db: Database;
 
     constructor() {
@@ -88,20 +88,15 @@ export class CategoryDomain {
             throw new NotFoundError('Category not found');
         }
 
-        return categoryFormat(category);
+        return category
     }
 
     async listCategories(params: ListCategoriesInput): Promise<CategoryList> {
-        const rows = (await this.db.categories().page(params.limit, params.offset).select()) as CategoryRow[];
+        const rows = (await this.db.categories().page(params.limit, params.offset).select());
         const total = await this.db.categories().count();
 
-        const categories: Category[] = [];
-        for (const row of rows) {
-            categories.push(categoryFormat(row));
-        }
-
         return {
-            data: categories,
+            data: rows,
             pagination: {
                 offset: params.offset,
                 limit:  params.limit,
@@ -123,14 +118,4 @@ export class CategoryDomain {
 
         await this.db.categories().filterID(params.category_id).delete();
     }
-}
-
-function categoryFormat(row: CategoryRow): Category {
-    return {
-        id:          row.id,
-        title:       row.title,
-        description: row.description,
-        created_at:  row.created_at,
-        updated_at:  row.updated_at,
-    };
 }

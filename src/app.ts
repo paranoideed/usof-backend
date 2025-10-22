@@ -1,8 +1,10 @@
-import express, { type Request, type Response } from "express";
-import {apiRouter} from "./api/router";
-import {config} from "./utils/config/config";
-import {errorRenderer} from "./api/middlewares/error";
-import {log} from "./utils/logger/logger";
+import express from "express";
+
+import config from "./utils/config";
+import log from "./utils/logger";
+import apiRouter from "./api/router";
+
+import errorRenderer from "./api/middlewares/error";
 
 export class App {
     public expressApp: express.Express;
@@ -27,3 +29,6 @@ export class App {
         });
     }
 }
+
+const app = new App();
+export default app;

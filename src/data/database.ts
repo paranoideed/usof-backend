@@ -2,7 +2,8 @@ import fs from "fs";
 import path from "path";
 import knex, { Knex } from 'knex';
 
-import {config} from "../utils/config/config";
+import config from "../utils/config";
+
 import UsersQ from './users';
 import CategoriesQ from './categories';
 import PostsQ from './posts';
@@ -134,4 +135,4 @@ export class Database {
 }
 
 const database = new Database(config.database.sql);
-export {database};
+export default database;

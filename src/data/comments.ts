@@ -7,7 +7,7 @@ export type CommentRow = {
     author_username: string;
     parent_id:       string | null;
 
-    replies_count:   number; // <-- NEW
+    replies_count:   number;
 
     content:  string;
     likes:    number;
@@ -50,7 +50,7 @@ export default class CommentsQ {
             author_username: params.author_username,
             parent_id:       params.parent_id ?? null,
 
-            replies_count:   0, // <-- DB всё равно дефолтнёт, но оставим для явности
+            replies_count:   0,
 
             content:         params.content,
             likes:           0,
@@ -133,7 +133,7 @@ export default class CommentsQ {
             this.C('author_id'),
             this.C('author_username'),
             this.C('parent_id'),
-            this.C('replies_count'), // <-- NEW
+            this.C('replies_count'),
             this.C('content'),
             this.C('likes'),
             this.C('dislikes'),
@@ -153,7 +153,7 @@ export default class CommentsQ {
             author_username: row.author_username,
             parent_id: row.parent_id,
 
-            replies_count: row.replies_count, // <-- NEW
+            replies_count: row.replies_count,
 
             content: row.content,
             likes: row.likes,
@@ -187,7 +187,7 @@ export default class CommentsQ {
             this.C('author_id'),
             this.C('author_username'),
             this.C('parent_id'),
-            this.C('replies_count'), // <-- NEW
+            this.C('replies_count'),
             this.C('content'),
             this.C('likes'),
             this.C('dislikes'),
@@ -207,7 +207,7 @@ export default class CommentsQ {
                 author_username: row.author_username,
                 parent_id: row.parent_id,
 
-                replies_count: row.replies_count, // <-- NEW
+                replies_count: row.replies_count,
 
                 content: row.content,
                 likes: row.likes,
@@ -219,7 +219,6 @@ export default class CommentsQ {
         }));
     }
 
-    // ---- фильтры/сортировки ----
     filterID(id: string): this {
         this.builder = this.builder.where(this.C('id'), id);
         this.counter = this.counter.where(this.C('id'), id);
@@ -271,7 +270,6 @@ export default class CommentsQ {
         return this;
     }
 
-    // при желании — сортировка по количеству прямых ответов
     orderByReplies(asc = false): this {
         this.builder = this.builder.orderBy(this.C('replies_count'), asc ? 'asc' : 'desc');
         return this;

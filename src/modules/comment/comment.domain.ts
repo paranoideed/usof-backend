@@ -1,17 +1,23 @@
-import { v4 as uuid } from 'uuid';
+import { v4 as uuid } from "uuid";
 
-import {database, Database} from "../../data/database";
+import database, {Database} from "../../data/database";
+
 import {
     CreateCommentInput,
-    DeleteCommentInput, DeleteLikeCommentInput,
+    DeleteCommentInput,
+    DeleteLikeCommentInput,
     GetCommentInput,
     LikeCommentInput,
     ListCommentLikesInput,
     ListCommentsInput,
     UpdateCommentInput
 } from "./comment.dto";
-import {ForbiddenError, InternalError, NotFoundError, UnauthorizedError} from "../../api/errors";
-import {log} from "../../utils/logger/logger";
+import {
+    ForbiddenError,
+    InternalError,
+    NotFoundError,
+    UnauthorizedError,
+} from "../../api/errors";
 
 export type CommentData = {
     id:              string;
@@ -54,7 +60,7 @@ export type LikesList = {
     pagination: { offset: number; limit: number; total: number };
 }
 
-export class CommentDomain {
+export default class CommentDomain {
     private db: Database;
 
     constructor() {

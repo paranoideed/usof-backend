@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
-import { UnauthorizedError, ForbiddenError } from "../errors";
+
 import tokenManager from "../../modules/auth/tokens_manager/manager";
+import { UnauthorizedError } from "../errors";
 
 declare global {
     namespace Express {
@@ -15,7 +16,7 @@ declare global {
     }
 }
 
-export function authMiddleware(
+export default function authMiddleware(
     req:  Request,
     res:  Response,
     next: NextFunction,

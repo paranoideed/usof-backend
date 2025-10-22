@@ -1,5 +1,10 @@
-import {database, Database} from "../../data/database";
-import {GetProfileInput, GetProfilesInput, UpdateProfileInput} from "./profile.dto";
+import database, {Database} from '../../data/database';
+
+import {
+    GetProfileInput,
+    GetProfilesInput,
+    UpdateProfileInput,
+} from "./profile.dto";
 import {NotFoundError} from "../../api/errors";
 
 export type Profile = {
@@ -21,7 +26,7 @@ export type ProfileList = {
     };
 }
 
-export class ProfileDomain {
+export default class ProfileDomain {
     private db: Database;
 
     constructor() {

@@ -1,7 +1,8 @@
 import type {NextFunction, Request, Response} from "express";
+
 import {ForbiddenError} from "../errors";
 
-export function adminOnlyMiddleware(
+export default function adminOnlyMiddleware(
     req: Request,
     res: Response,
     next: NextFunction

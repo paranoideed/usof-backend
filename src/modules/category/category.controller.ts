@@ -1,10 +1,8 @@
 import { z } from "zod";
 import type { NextFunction, Request, Response } from "express";
 
-import {log} from "../../utils/logger/logger";
+import log from "../../utils/logger";
 
-
-import {CategoryDomain} from "./category.domain";
 import {
     CreateCategorySchema,
     DeleteCategorySchema,
@@ -12,8 +10,9 @@ import {
     ListCategoriesSchema,
     UpdateCategorySchema
 } from "./category.dto";
+import CategoryDomain from "./category.domain";
 
-class CategoryController {
+export default class CategoryController {
     private domain: CategoryDomain;
 
     constructor() {
@@ -148,5 +147,3 @@ class CategoryController {
         }
     }
 }
-
-export const categoryController = new CategoryController();

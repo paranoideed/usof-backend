@@ -1,24 +1,26 @@
 import { z } from "zod";
 import type { NextFunction, Request, Response } from "express";
 
-import {CommentDomain} from "./comment.domain";
+import log from "../../utils/logger";
 
 import {
     CreateCommentSchema,
-    DeleteCommentSchema, DeleteLikeCommentSchema,
-    GetCommentSchema, LikeCommentSchema, ListCommentLikesSchema,
+    DeleteCommentSchema,
+    DeleteLikeCommentSchema,
+    GetCommentSchema,
+    LikeCommentSchema,
+    ListCommentLikesSchema,
     ListCommentsSchema,
     UpdateCommentSchema
 } from "./comment.dto";
-import {log} from "../../utils/logger/logger";
+import CommentDomain from "./comment.domain";
 
-class CommentController {
+export default class CommentController {
     private domain: CommentDomain;
 
     constructor() {
         this.domain = new CommentDomain();
     }
-
     
     async createComment(req: Request, res: Response, next: NextFunction) {
         const candidate = {
@@ -242,5 +244,3 @@ class CommentController {
         }
     }
 }
-
-export const commentController = new CommentController();

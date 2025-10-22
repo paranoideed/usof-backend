@@ -3,11 +3,13 @@ import express, {
     type Request,
     type Response
 } from "express";
-import { categoryController } from "./category.controller.js";
-import {authMiddleware} from "../../api/middlewares/auth";
-import {adminOnlyMiddleware} from "../../api/middlewares/admin";
+
+import authMiddleware from "../../api/middlewares/auth";
+import adminOnlyMiddleware from "../../api/middlewares/admin";
+import CategoryController from "./category.controller";
 
 const categoryRouter = express.Router();
+const categoryController = new CategoryController();
 
 categoryRouter.get(
     "/",
@@ -50,4 +52,4 @@ categoryRouter.delete(
     }
 );
 
-export { categoryRouter };
+export default categoryRouter;

@@ -3,10 +3,11 @@ import express, {
     type Request,
     type Response
 } from "express";
-import { profileController } from "./profile.controller";
-import {authMiddleware} from "../../api/middlewares/auth";
+import ProfileController from "./profile.controller";
+import authMiddleware from "../../api/middlewares/auth";
 
 const profileRouter = express.Router();
+const profileController = new ProfileController();
 
 profileRouter.get(
     "/me",
@@ -45,4 +46,4 @@ profileRouter.get(
     }
 );
 
-export { profileRouter };
+export default profileRouter;

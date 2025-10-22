@@ -1,17 +1,23 @@
 import { v4 as uuid } from 'uuid';
 
 import {ConflictError, ForbiddenError, UnauthorizedError} from "../../api/errors";
-import {Database, database} from "../../data/database";
 
+import database, {Database} from "../../data/database";
+
+import {
+    LoginInput,
+    RegisterInput,
+    ResetPasswordInput,
+} from "./auth.dto";
 import tokenManager, {TokenManager} from "./tokens_manager/manager";
 import passwordHasher, {PasswordHasher} from "./password_hasher/hasher";
-import {LoginInput, RegisterInput, ResetPasswordInput} from "./auth.dto";
+
 
 export type UserToken = {
     token: string;
 }
 
-export class AuthDomain {
+export default class AuthDomain {
     private db:     Database;
     private jwt:    TokenManager;
     private hasher: PasswordHasher;

@@ -1,14 +1,14 @@
 import type { Request, Response, NextFunction } from "express";
 import { ZodError, z } from "zod";
-import {BadRequestError, HttpError, InternalError, MethodNotAllowedError} from "../errors";
 
-export function errorRenderer(
+import {BadRequestError, HttpError, InternalError} from "../errors";
+
+export default function errorRenderer(
     err: unknown,
     req: Request,
     res: Response,
     next: NextFunction
 ) {
-    // Если ошибка валидации от Zod
     if (err instanceof ZodError) {
         const details = z.treeifyError(err);
         const e = new BadRequestError("Validation failed", details);

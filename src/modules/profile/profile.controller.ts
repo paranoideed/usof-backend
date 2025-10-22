@@ -1,12 +1,16 @@
 import { z } from "zod";
 import type { NextFunction, Request, Response } from "express";
 
-import {ProfileDomain} from "./profile.domain";
+import log from "../../utils/logger";
 
-import {GetProfileSchema, GetProfilesSchema, UpdateProfileSchema} from "./profile.dto";
-import {log} from "../../utils/logger/logger";
+import {
+    GetProfileSchema,
+    GetProfilesSchema,
+    UpdateProfileSchema,
+} from "./profile.dto";
+import ProfileDomain from "./profile.domain";
 
-class ProfileController {
+export default class ProfileController {
     private domain: ProfileDomain;
 
     constructor() {
@@ -85,7 +89,6 @@ class ProfileController {
         }
     }
 
-    
     async updateProfile(req: Request, res: Response, next: NextFunction) {
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized" });
@@ -116,5 +119,3 @@ class ProfileController {
         }
     }
 }
-
-export const profileController = new ProfileController();

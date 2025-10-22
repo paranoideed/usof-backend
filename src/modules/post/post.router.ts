@@ -3,10 +3,11 @@ import express, {
     type Request,
     type Response
 } from "express";
-import {postController} from "./post.controller";
-import {authMiddleware} from "../../api/middlewares/auth";
+import PostController from "./post.controller";
+import authMiddleware from "../../api/middlewares/auth";
 
 const postRouter = express.Router();
+const postController = new PostController();
 
 postRouter.post(
     "/",
@@ -79,4 +80,4 @@ postRouter.get(
     }
 );
 
-export { postRouter };
+export default postRouter;

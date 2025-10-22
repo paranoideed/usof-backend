@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { argv, exit } from 'node:process';
-import Cli from './cli'; // расширение .ts не пишем — tsc подставит
+
+import Cli from './cli';
 
 async function main(): Promise<void> {
     const args: string[] = argv.slice(2);

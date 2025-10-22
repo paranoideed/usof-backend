@@ -3,10 +3,12 @@ import express, {
     type Request,
     type Response
 } from "express";
-import { authController } from "./auth.controller.js";
-import {authMiddleware} from "../../api/middlewares/auth";
+
+import AuthController from "./auth.controller.js";
+import authMiddleware from "../../api/middlewares/auth";
 
 const authRouter = express.Router();
+const authController = new AuthController();
 
 authRouter.post(
     "/register",
@@ -42,5 +44,4 @@ authRouter.post(
         authController.resetPassword(req, res, next)
 );
 
-
-export { authRouter };
+export default authRouter;

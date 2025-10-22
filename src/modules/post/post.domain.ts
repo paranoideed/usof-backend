@@ -1,6 +1,8 @@
 import { v4 as uuid } from 'uuid';
 
-import {database, Database} from "../../data/database";
+import database, {Database} from '../../data/database';
+import log from "../../utils/logger";
+
 import {
     UpdatePostStatusInput,
     CreatePostInput, DeleteLikePostInput,
@@ -18,7 +20,6 @@ import {
     UnauthorizedError,
 } from "../../api/errors";
 import {Category} from "../category/category.domain";
-import {log} from "../../utils/logger/logger";
 
 export type PostData = {
     id:              string;
@@ -62,7 +63,7 @@ export type LikesList = {
     pagination: { offset: number; limit: number; total: number };
 }
 
-export class PostDomain {
+export default class PostDomain {
     private db: Database;
 
     constructor() {

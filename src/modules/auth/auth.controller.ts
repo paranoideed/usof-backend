@@ -1,21 +1,22 @@
 import { z } from "zod";
 import type { NextFunction, Request, Response } from "express";
 
+import log from "../../utils/logger";
 
-import {log} from "../../utils/logger/logger";
+import {
+    LoginSchema,
+    RegisterSchema,
+    ResetPassword,
+} from "./auth.dto";
+import AuthDomain from "./auth.domain";
 
-import {AuthDomain} from "./auth.domain";
-import {LoginSchema, RegisterSchema, ResetPassword} from "./auth.dto";
-
-
-export class AuthController {
+export default class AuthController {
     private domain: AuthDomain;
 
     constructor() {
         this.domain = new AuthDomain();
     }
 
-    
     async register(req: Request, res: Response, next: NextFunction) {
         const candidate = {
             email:    req.body.email,
@@ -120,5 +121,3 @@ export class AuthController {
         }
     }
 }
-
-export const authController = new AuthController();

@@ -236,7 +236,6 @@ export default class PostsQ {
         await this.builder.clone().del();
     }
 
-    // -------- ФИЛЬТРЫ (без 'posts.'; всё через алиас p) --------
     filterID(id: string): this {
         this.builder = this.builder.where(this.C('id'), id);
         this.counter = this.counter.where(this.C('id'), id);
@@ -267,9 +266,8 @@ export default class PostsQ {
     }
 
     filterCategory(categoryId: string): this {
-        if (!categoryId) return this; // ничего не делаем, если не выбрано
+        if (!categoryId) return this;
 
-        // основной список
         this.builder = this.builder.whereExists((qb) =>
             qb.select(this.builder.client.raw('1'))
                 .from('post_categories as pc')
@@ -277,7 +275,6 @@ export default class PostsQ {
                 .where('pc.category_id', categoryId) // одна категория
         );
 
-        // счётчик (тот же фильтр)
         this.counter = this.counter.whereExists((qb) =>
             qb.select(this.counter.client.raw('1'))
                 .from('post_categories as pc')
@@ -342,7 +339,6 @@ export default class PostsQ {
         return this;
     }
 
-    // -------- СОРТИРОВКИ --------
     orderByRating(asc = false): this {
         this.builder = this.builder.orderByRaw(
             `\`${this.alias}\`.\`likes\` - \`${this.alias}\`.\`dislikes\` ${asc ? 'asc' : 'desc'}`
@@ -386,24 +382,20 @@ function parseCategoriesJson(raw: any): CategoryRow[] {
     if (raw == null) return [];
 
     try {
-        // 1) Если Buffer — превратим в строку
         if (Buffer.isBuffer(raw)) {
             raw = raw.toString('utf8');
         }
 
-        // 2) Если объект вида { type: 'Buffer', data: [...] } (иногда так приходит)
         if (typeof raw === 'object' && raw?.type === 'Buffer' && Array.isArray(raw.data)) {
             raw = Buffer.from(raw.data).toString('utf8');
         }
 
-        // 3) Если строка — просто JSON.parse
         let arr: any;
         if (typeof raw === 'string') {
             arr = JSON.parse(raw);
         } else if (Array.isArray(raw)) {
-            arr = raw; // уже массив
+            arr = raw;
         } else if (typeof raw === 'object') {
-            // Вдруг драйвер уже отдал JSON как объект
             arr = raw;
         } else {
             return [];
@@ -415,12 +407,10 @@ function parseCategoriesJson(raw: any): CategoryRow[] {
             id: String(c.id),
             title: String(c.title),
             description: c.description == null ? "" : String(c.description),
-            // если на бэке нужны строки — оставь как строки; если Date — приводи к Date
             created_at: c.created_at ? new Date(c.created_at) : new Date(0),
             updated_at: c.updated_at ? new Date(c.updated_at) : null,
         }));
     } catch (e) {
-        // на всякий лог, чтобы один раз увидеть реальный тип raw
         console.error('parseCategoriesJson failed. typeof:', typeof raw, 'sample:', String(raw).slice(0, 200));
         return [];
     }

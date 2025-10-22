@@ -16,8 +16,12 @@ build-js:
 start-js:
 	KV_VIPER_FILE=$(CONFIG_FILE) node dist/index.js service run
 
+service-run: build-js start-js
+
 migrate-up-js:
+	build-js
 	KV_VIPER_FILE=$(CONFIG_FILE) node dist/index.js migrate up
 
 migrate-down-js:
+	build-js
 	KV_VIPER_FILE=$(CONFIG_FILE) node dist/index.js migrate down

@@ -33,7 +33,7 @@ interface RawConfig {
     };
 }
 
-export default class Config {
+class Config {
     server: {
         host: string;
         port: number;
@@ -57,9 +57,7 @@ export default class Config {
         };
     };
 
-    // --- ИЗМЕНЕНИЕ ЗДЕСЬ: ЗАМЕНИ СТАРЫЙ КОНСТРУКТОР НА ЭТОТ ---
     constructor(raw: RawConfig) {
-        // 1. Устанавливаем значения из YAML-файла (или 'undefined', если в файле их нет)
         this.server = {
             host: raw.server?.host,
             port: raw.server?.port,
@@ -83,8 +81,6 @@ export default class Config {
             },
         };
 
-        // 2. Перезаписываем значениями из Environment (переменных окружения)
-        // (Именно эти переменные приходят из docker-compose.yml)
         this.server.port = Number(process.env.PORT) || this.server.port;
 
         this.database.sql.host = process.env.DB_HOST || this.database.sql.host;
@@ -93,7 +89,6 @@ export default class Config {
         this.database.sql.password = process.env.DB_PASSWORD || this.database.sql.password;
         this.database.sql.name = process.env.DB_DATABASE || this.database.sql.name;
 
-        // 3. Теперь, когда все значения собраны, проверяем обязательные
         this.server.host = req(this.server.host, 'server.host');
         this.server.port = req(this.server.port, 'server.port');
         this.server.logging.level = req(this.server.logging.level, 'server.logging.level');
@@ -107,8 +102,6 @@ export default class Config {
         this.database.sql.password = req(this.database.sql.password, 'database.sql.password');
         this.database.sql.name = req(this.database.sql.name, 'database.sql.name');
     }
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-
 
     /**
      * Download YAML config file and parse it into Config object
@@ -145,4 +138,5 @@ if (!configPath) {
     process.exit(1);
 }
 
-export const config = Config.load(configPath);
+const config = Config.load(configPath);
+export default config;
