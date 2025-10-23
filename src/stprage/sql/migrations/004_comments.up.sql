@@ -2,7 +2,6 @@ CREATE TABLE comments (
     id              CHAR(36)     PRIMARY KEY NOT NULL DEFAULT (UUID()),
     post_id         CHAR(36)     NOT NULL,
     author_id       CHAR(36)     NOT NULL,
-    author_username VARCHAR(255) NOT NULL,
     parent_id       CHAR(36)     DEFAULT NULL,
 
     replies_count INT NOT NULL DEFAULT 0,
@@ -14,14 +13,8 @@ CREATE TABLE comments (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT NULL,
 
-    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
     FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE,
-
-    CONSTRAINT fk_comments_author
-    FOREIGN KEY (author_id, author_username)
-    REFERENCES users (id, username)
-    ON UPDATE CASCADE
-    ON DELETE RESTRICT
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE RESTRICT
 );
 
 CREATE INDEX idx_comment_post_id   ON comments (post_id);
@@ -32,18 +25,13 @@ CREATE TABLE comment_likes (
     id              CHAR(36)     PRIMARY KEY NOT NULL DEFAULT (UUID()),
     comment_id      CHAR(36)     NOT NULL,
     author_id       CHAR(36)     NOT NULL,
-    author_username VARCHAR(255) NOT NULL,
     type            ENUM('like', 'dislike'),
     created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     UNIQUE(comment_id, author_id),
     FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
 
-    CONSTRAINT fk_comment_likes_author
-        FOREIGN KEY (author_id, author_username)
-            REFERENCES users (id, username)
-            ON UPDATE CASCADE
-            ON DELETE RESTRICT
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE RESTRICT
 );
 
 CREATE TRIGGER trg_comments_ai

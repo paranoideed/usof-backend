@@ -1,7 +1,6 @@
 CREATE TABLE posts (
     id              CHAR(36)     PRIMARY KEY NOT NULL DEFAULT (UUID()),
     author_id       CHAR(36)     NOT NULL,
-    author_username VARCHAR(255) NOT NULL,
     title           VARCHAR(255) NOT NULL,
     status          ENUM('active', 'closed') NOT NULL DEFAULT 'active',
 
@@ -10,13 +9,7 @@ CREATE TABLE posts (
     dislikes   INT          NOT NULL DEFAULT 0,
 
     created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME     DEFAULT NULL,
-
-    CONSTRAINT fk_posts_author
-        FOREIGN KEY (author_id, author_username)
-            REFERENCES users (id, username)
-            ON UPDATE CASCADE
-            ON DELETE RESTRICT
+    updated_at DATETIME     DEFAULT NULL
 );
 
 CREATE TABLE post_categories (
@@ -32,18 +25,12 @@ CREATE TABLE post_likes (
     id              CHAR(36)     PRIMARY KEY NOT NULL DEFAULT (UUID()),
     post_id         CHAR(36)     NOT NULL,
     author_id       CHAR(36)     NOT NULL,
-    author_username VARCHAR(255) NOT NULL,
     type            ENUM('like', 'dislike'),
     created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     UNIQUE(post_id, author_id),
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-
-    CONSTRAINT fk_post_likes_author
-        FOREIGN KEY (author_id, author_username)
-            REFERENCES users (id, username)
-            ON UPDATE CASCADE
-            ON DELETE RESTRICT
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE RESTRICT
 );
 
 CREATE TRIGGER trg_post_likes_after_insert

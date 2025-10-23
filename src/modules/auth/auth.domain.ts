@@ -1,8 +1,8 @@
 import { v4 as uuid } from 'uuid';
 
-import {ConflictError, ForbiddenError, UnauthorizedError} from "../../api/errors";
+import {Conflict, Forbidden, Unauthorized} from "../../api/errors";
 
-import database, {Database} from "../../data/database";
+import database, {Database} from "../../stprage/sql/database";
 
 import {
     LoginInput,
@@ -30,10 +30,10 @@ export default class AuthDomain {
 
     async register(params: RegisterInput): Promise<void> {
         const existing = await this.db.users().filterEmail(params.email).get();
-        if (existing) throw new ConflictError('User with this email already exists');
+        if (existing) throw new Conflict('User with this email already exists');
 
         const existingUsername = await this.db.users().filterUsername(params.username).get();
-        if (existingUsername) throw new ConflictError('User with this username already exists');
+        if (existingUsername) throw new Conflict('User with this username already exists');
 
         const pasHash = await this.hasher.hashPassword(params.password);
 
@@ -56,12 +56,12 @@ export default class AuthDomain {
         }
 
         if (!user) {
-            throw new ForbiddenError('Invalid credentials');
+            throw new Forbidden('Invalid credentials');
         }
 
         const isValid = await this.hasher.verifyPassword(params.password, user.password_hash);
         if (!isValid) {
-            throw new ForbiddenError('Invalid credentials');
+            throw new Forbidden('Invalid credentials');
         }
 
         const token = this.jwt.createToken(user.id, user.role);
@@ -74,7 +74,7 @@ export default class AuthDomain {
     async resetPassword(params: ResetPasswordInput): Promise<void> {
         const user = await this.db.users().filterID(params.user_id).get();
         if (!user) {
-            throw new UnauthorizedError('User not found');
+            throw new Unauthorized('User not found');
         }
 
         const newHash = await this.hasher.hashPassword(params.new_password);

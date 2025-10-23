@@ -8,7 +8,6 @@ export type UserRow = {
     email:         string;
     username:      string;
     pseudonym:     string | null;
-    avatar:        string | null;
     reputation:    number;
     password_hash: string;
     created_at:    Date;
@@ -30,7 +29,6 @@ export default class UsersQ {
         email:         string;
         username:      string;
         pseudonym?:    string | null;
-        avatar?:       string | null;
         password_hash: string;
         reputation?:   number;
         created_at?:   Date;
@@ -41,7 +39,6 @@ export default class UsersQ {
             email:         params.email,
             username:      params.username,
             pseudonym:     params.pseudonym ?? null,
-            avatar:        params.avatar ?? null,
             password_hash: params.password_hash,
             reputation:    params.reputation ?? 0,
             created_at:    params.created_at ?? new Date(),
@@ -67,7 +64,6 @@ export default class UsersQ {
         email?:         string;
         username?:      string;
         pseudonym?:     string | null;
-        avatar?:        string | null;
         reputation?:    number;
         password_hash?: string;
         updated_at?:    Date;
@@ -78,7 +74,6 @@ export default class UsersQ {
         if (Object.prototype.hasOwnProperty.call(set, 'email'))         setMap.email = set.email!;
         if (Object.prototype.hasOwnProperty.call(set, 'username'))      setMap.username = set.username!;
         if (Object.prototype.hasOwnProperty.call(set, 'pseudonym'))     setMap.pseudonym = set.pseudonym!;
-        if (Object.prototype.hasOwnProperty.call(set, 'avatar'))        setMap.avatar = set.avatar!;
         if (Object.prototype.hasOwnProperty.call(set, 'reputation'))    setMap.reputation = set.reputation!;
         if (Object.prototype.hasOwnProperty.call(set, 'password_hash')) setMap.password_hash = set.password_hash!;
         if (Object.prototype.hasOwnProperty.call(set, 'updated_at'))    setMap.updated_at = set.updated_at!;

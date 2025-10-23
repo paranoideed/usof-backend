@@ -1,6 +1,6 @@
 import type {NextFunction, Request, Response} from "express";
 
-import {ForbiddenError} from "../errors";
+import {Forbidden} from "../errors";
 
 export default function adminOnlyMiddleware(
     req: Request,
@@ -8,7 +8,7 @@ export default function adminOnlyMiddleware(
     next: NextFunction
 ) {
     if (!req.user || req.user.role !== "admin") {
-        return next(new ForbiddenError("Admin access required"));
+        return next(new Forbidden("Admin access required"));
     }
     next();
 }

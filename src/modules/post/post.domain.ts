@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 
-import database, {Database} from '../../data/database';
+import database, {Database} from '../../stprage/sql/database';
 import log from "../../utils/logger";
 
 import {
@@ -14,10 +14,10 @@ import {
     UpdatePostInput
 } from "./post.dto";
 import {
-    ConflictError,
-    ForbiddenError,
-    NotFoundError,
-    UnauthorizedError,
+    Conflict,
+    Forbidden,
+    NotFound,
+    Unauthorized,
 } from "../../api/errors";
 import {Category} from "../category/category.domain";
 
@@ -73,23 +73,23 @@ export default class PostDomain {
     private async checkRight(initiatorId: string, postId: string): Promise<void> {
         const initiator = await this.db.users().filterID(initiatorId).get();
         if (!initiator) {
-            throw new UnauthorizedError('Initiator profile not found');
+            throw new Unauthorized('Initiator profile not found');
         }
 
         const post = await this.db.posts().filterID(postId).get();
         if (!post) {
-            throw new NotFoundError('Post not found');
+            throw new NotFound('Post not found');
         }
 
         if (initiator.id !== post.author_id && initiator.role !== 'admin') {
-            throw new ForbiddenError('Permission denied');
+            throw new Forbidden('Permission denied');
         }
     }
 
     async createPost(params: CreatePostInput): Promise<Post> {
         const user = await this.db.users().filterID(params.author_id).get();
         if (!user) {
-            throw new UnauthorizedError('User not found');
+            throw new Unauthorized('User not found');
         }
 
         const postId = uuid();
@@ -98,7 +98,6 @@ export default class PostDomain {
             const newPost = await this.db.posts().insert({
                 id:              postId,
                 author_id:       params.author_id,
-                author_username: user.username,
                 title:           params.title,
                 content:         params.content,
                 status:          'active',
@@ -119,7 +118,7 @@ export default class PostDomain {
     async getPost(params: GetPostInput): Promise<Post> {
         const post = await this.db.posts().filterID(params.post_id).getWithDetails(params.user_id);
         if (!post) {
-            throw new NotFoundError('Post not found');
+            throw new NotFound('Post not found');
         }
 
         return post;
@@ -149,7 +148,7 @@ export default class PostDomain {
 
         const updated = await this.db.posts().filterID(params.post_id).getWithDetails(params.initiator_id);
         if (!updated) {
-            throw new NotFoundError('Post not found after update');
+            throw new NotFound('Post not found after update');
         }
 
         return updated;
@@ -164,12 +163,12 @@ export default class PostDomain {
     async likePost(params: LikePostInput): Promise<Post> {
         let post = await this.db.posts().filterID(params.post_id).get();
         if (!post) {
-            throw new NotFoundError('Post not found');
+            throw new NotFound('Post not found');
         }
 
         const user = await this.db.users().filterID(params.initiator_id).get();
         if (!user) {
-            throw new UnauthorizedError('User not found');
+            throw new Unauthorized('User not found');
         }
 
         await this.db.postLikes().upsert({
@@ -187,7 +186,7 @@ export default class PostDomain {
     async deleteLike(params: DeleteLikePostInput): Promise<Post> {
         const post = await this.db.posts().filterID(params.post_id).get();
         if (!post) {
-            throw new NotFoundError('Post not found');
+            throw new NotFound('Post not found');
         }
 
         await this.db.postLikes().filterPostID(params.post_id).filterAuthorID(params.initiator_id).delete();
@@ -198,16 +197,16 @@ export default class PostDomain {
     async updatePostStatus(params: UpdatePostStatusInput): Promise<Post> {
         const initiator = await this.db.users().filterID(params.initiator_id).get();
         if (!initiator) {
-            throw new UnauthorizedError('User not found');
+            throw new Unauthorized('User not found');
         }
 
         const post = await this.db.posts().filterID(params.post_id).get();
         if (!post) {
-            throw new NotFoundError('Post not found');
+            throw new NotFound('Post not found');
         }
 
         if (initiator.id !== post.author_id && initiator.role !== 'admin') {
-            throw new ConflictError('Only admin can change status not own posts');
+            throw new Conflict('Only admin can change status not own posts');
         }
 
         await this.db.posts().filterID(params.post_id).update({
@@ -217,7 +216,7 @@ export default class PostDomain {
 
         const updated = await this.db.posts().filterID(params.post_id).getWithDetails(params.initiator_id);
         if (!updated) {
-            throw new NotFoundError('Post not found after status change');
+            throw new NotFound('Post not found after status change');
         }
 
         return updated;

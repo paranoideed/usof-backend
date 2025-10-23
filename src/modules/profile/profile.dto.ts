@@ -56,7 +56,7 @@ export const DeleteProfileSchema = z.object({
 
 export const UpdateAvatarSchema = z.object({
     user_id: z.uuid(),
-    avatar:  z.object({}).refine((file) => file !== undefined, { message: "Avatar file is required" }),
+    avatar: z.custom<Express.Multer.File>((v) => !!v, { message: "Avatar file is required" }),
 });
 
 export type GetProfileInput    = z.infer<typeof GetProfileSchema>;

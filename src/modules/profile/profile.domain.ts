@@ -1,17 +1,18 @@
-import database, {Database} from '../../data/database';
+import database, {Database} from '../../stprage/sql/database';
 
 import {
     GetProfileInput,
     GetProfilesInput, UpdateAvatarInput,
     UpdateProfileInput,
 } from "./profile.dto";
-import {NotFoundError} from "../../api/errors";
+import {NotFound, PayloadTooLarge, UnsupportedMediaType} from "../../api/errors";
+import {putUserAvatarPNG} from "../../stprage/aws/s3";
+import log from "../../utils/logger";
 
 export type Profile = {
     id:         string;
     username:   string;
     pseudonym:  string | null;
-    avatar:     string | null;
     reputation: number;
     created_at: Date;
     updated_at: Date | null;
@@ -44,7 +45,7 @@ export default class ProfileDomain {
         }
 
         if (!user) {
-            throw new NotFoundError('User not found');
+            throw new NotFound('User not found');
         }
 
         return user;
@@ -72,7 +73,7 @@ export default class ProfileDomain {
     async updateProfile(params: UpdateProfileInput): Promise<Profile> {
         const user = await this.db.users().filterID(params.user_id).get();
         if (!user) {
-            throw new NotFoundError('User not found');
+            throw new NotFound('User not found');
         }
 
         const patch: { username?: string; pseudonym?: string | null ; avatar?: string | null ; updated_at?: Date } = {};
@@ -84,36 +85,33 @@ export default class ProfileDomain {
 
         const updated = await this.db.users().filterID(params.user_id).get();
         if (!updated) {
-            throw new NotFoundError('User not found after update');
+            throw new NotFound('User not found after update');
         }
 
         return updated;
     }
 
-    async updateAvatar(params: UpdateAvatarInput): Promise<Profile> {
+    async updateAvatar(params: UpdateAvatarInput): Promise<void> {
         const user = await this.db.users().filterID(params.user_id).get();
-        if (!user) {
-            throw new NotFoundError('User not found');
+        if (!user) throw new NotFound('User not found');
+
+        if (params.avatar.mimetype !== "image/png") {
+            log.error("Avatar upload failed: unsupported media type", { user_id: params.user_id, mimetype: params.avatar.mimetype });
+            throw new UnsupportedMediaType("Only image/png is allowed");
+        }
+        if (params.avatar.size > 10 * 1024 * 1024) {
+            log.error("Avatar upload failed: file too large", { user_id: params.user_id, size: params.avatar.size });
+            throw new PayloadTooLarge("File too large: max 10MB");
         }
 
-        const patch: { avatar?: string | null ; updated_at?: Date } = {};
-        if (Object.prototype.hasOwnProperty.call(params, 'file'))  patch.avatar = params.avatar.path;
-        patch.updated_at = new Date();
-
-        await this.db.users().filterID(params.user_id).update(patch);
-
-        const updated = await this.db.users().filterID(params.user_id).get();
-        if (!updated) {
-            throw new NotFoundError('User not found after avatar update');
-        }
-
-        return updated;
+        await putUserAvatarPNG(String(params.user_id), params.avatar.buffer);
     }
+
 
     async deleteProfile(user_id: string): Promise<void> {
         const user = await this.db.users().filterID(user_id).get();
         if (!user) {
-            throw new NotFoundError('User not found');
+            throw new NotFound('User not found');
         }
 
         await this.db.users().filterID(user_id).delete();

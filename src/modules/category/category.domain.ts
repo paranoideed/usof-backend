@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 
-import database, {Database} from '../../data/database';
+import database, {Database} from '../../stprage/sql/database';
 
 import {
     GetCategoryInput,
@@ -8,7 +8,7 @@ import {
     UpdateCategoryInput,
     ListCategoriesInput, DeleteCategoryInput,
 } from "./category.dto.js";
-import {ForbiddenError, NotFoundError} from "../../api/errors";
+import {Forbidden, NotFound} from "../../api/errors";
 
 export type Category = {
     id:          string;
@@ -37,7 +37,7 @@ export default class CategoryDomain {
     async createCategory(params: CreateCategoryInput): Promise<Category> {
         const existing = await this.db.categories().filterTitle(params.title).get();
         if (existing) {
-            throw new ForbiddenError('Category with this title already exists');
+            throw new Forbidden('Category with this title already exists');
         }
 
         const category = await this.db.categories().insert({
@@ -59,7 +59,7 @@ export default class CategoryDomain {
     async updateCategory(params: UpdateCategoryInput): Promise<Category> {
         const row = await this.db.categories().filterID(params.category_id).get();
         if (!row) {
-            throw new NotFoundError('Category not found');
+            throw new NotFound('Category not found');
         }
 
         const patch: { title?: string | null; description?: string | null} = {};
@@ -70,7 +70,7 @@ export default class CategoryDomain {
 
         const category = await this.db.categories().filterID(params.category_id).get();
         if (!category) {
-            throw new NotFoundError('Category not found');
+            throw new NotFound('Category not found');
         }
 
         return {
@@ -85,7 +85,7 @@ export default class CategoryDomain {
     async getCategory(params: GetCategoryInput): Promise<Category> {
         const category = await this.db.categories().filterID(params.category_id).get();
         if (!category) {
-            throw new NotFoundError('Category not found');
+            throw new NotFound('Category not found');
         }
 
         return category
@@ -108,7 +108,7 @@ export default class CategoryDomain {
     async deleteCategory(params: DeleteCategoryInput): Promise<void> {
         const category = await this.db.categories().filterID(params.category_id).get();
         if (!category) {
-            throw new NotFoundError('Category not found');
+            throw new NotFound('Category not found');
         }
 
         await this.db.transaction(async (transaction) => {

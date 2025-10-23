@@ -1,6 +1,6 @@
 // src/storage/s3.ts
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import config from "../utils/config";
+import config from "../../utils/config";
 
 const region = config.aws.region!;
 const bucket = config.aws.bucket_name!;
@@ -29,5 +29,5 @@ export async function putUserAvatarPNG(userId: string, data: Buffer) {
         CacheControl: "public, max-age=31536000, immutable",
         // ACL: "public-read", // если бакет/политики позволяют публичный доступ
     }));
-    return { key, url: `${publicBase}/${key}` };
+    // return { key, url: `${publicBase}/${key}` };
 }

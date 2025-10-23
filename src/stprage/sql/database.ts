@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import knex, { Knex } from 'knex';
 
-import config from "../utils/config";
+import config from "../../utils/config";
 
 import UsersQ from './users';
 import CategoriesQ from './categories';

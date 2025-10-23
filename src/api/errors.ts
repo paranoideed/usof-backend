@@ -23,44 +23,56 @@ export class HttpError extends Error {
     }
 }
 
-export class BadRequestError extends HttpError {
+export class BadRequest extends HttpError {
     constructor(message = "Bad request", details?: unknown) {
         super(400, "BAD_REQUEST", message, details);
     }
 }
 
-export class UnauthorizedError extends HttpError {
+export class Unauthorized extends HttpError {
     constructor(message = "Unauthorized", details?: unknown) {
         super(401, "UNAUTHORIZED", message, details);
     }
 }
 
-export class ForbiddenError extends HttpError {
+export class Forbidden extends HttpError {
     constructor(message = "Forbidden", details?: unknown) {
         super(403, "FORBIDDEN", message, details);
     }
 }
 
-export class NotFoundError extends HttpError {
+export class NotFound extends HttpError {
     constructor(resource = "Resource", details?: unknown) {
         super(404, "NOT_FOUND", `${resource} not found`, details);
     }
 }
 
-export class ConflictError extends HttpError {
+export class Conflict extends HttpError {
     constructor(message = "Conflict", details?: unknown) {
         super(409, "CONFLICT", message, details);
     }
 }
 
-export class InternalError extends HttpError {
+export class Internal extends HttpError {
     constructor(message = "Internal server error", details?: unknown) {
         super(500, "INTERNAL", message, details);
     }
 }
 
-export class MethodNotAllowedError extends HttpError {
+export class MethodNotAllowed extends HttpError {
     constructor(message = "Method not allowed", details?: unknown) {
         super(405, "METHOD_NOT_ALLOWED", message, details);
+    }
+}
+
+export class PayloadTooLarge extends HttpError {
+    constructor(message = "Payload too large", details?: unknown) {
+        super(413, "TOO_MANY_REQUESTS", message, details);
+    }
+}
+
+export class UnsupportedMediaType extends HttpError {
+    constructor(message = "Unsupported media type", details?: unknown) {
+        super(415, "UNPROCESSABLE", message, details);
     }
 }

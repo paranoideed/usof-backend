@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 
 import tokenManager from "../../modules/auth/tokens_manager/manager";
-import { UnauthorizedError } from "../errors";
+import { Unauthorized } from "../errors";
 
 declare global {
     namespace Express {
@@ -32,7 +32,7 @@ export default function authMiddleware(
             token = req.cookies.accessToken;
         }
         if (!token) {
-            throw new UnauthorizedError("No access token provided");
+            throw new Unauthorized("No access token provided");
         }
 
         const payload = tokenManager.verifyToken(token);
@@ -42,6 +42,6 @@ export default function authMiddleware(
         };
         next();
     } catch (err) {
-        next(new UnauthorizedError("Invalid or expired access token"));
+        next(new Unauthorized("Invalid or expired access token"));
     }
 }

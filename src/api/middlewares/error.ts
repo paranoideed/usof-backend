@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { ZodError, z } from "zod";
 
-import {BadRequestError, HttpError, InternalError} from "../errors";
+import {BadRequest, HttpError, Internal} from "../errors";
 
 export default function errorRenderer(
     err: unknown,
@@ -11,7 +11,7 @@ export default function errorRenderer(
 ) {
     if (err instanceof ZodError) {
         const details = z.treeifyError(err);
-        const e = new BadRequestError("Validation failed", details);
+        const e = new BadRequest("Validation failed", details);
         return res.status(e.status).json({
             error: e.code,
             message: e.message,
@@ -28,7 +28,7 @@ export default function errorRenderer(
     }
 
     console.error("Unexpected error:", err);
-    const e = new InternalError();
+    const e = new Internal();
     return res.status(e.status).json({
         error: e.code,
         message: e.message,

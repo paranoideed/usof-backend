@@ -9,7 +9,8 @@ import {
     UpdateProfileSchema,
 } from "./profile.dto";
 import ProfileDomain from "./profile.domain";
-import {putUserAvatarPNG} from "../../stprage/s3";
+import {putUserAvatarPNG} from "../../stprage/aws/s3";
+import {PayloadTooLarge, UnsupportedMediaType} from "../../api/errors";
 
 export default class ProfileController {
     private domain: ProfileDomain;
@@ -120,16 +121,12 @@ export default class ProfileController {
     }
 
     async uploadAvatar(req: Request, res: Response, next: NextFunction) {
-        if (!req.user) {
-            return res.status(401).json({ message: "Unauthorized" });
-        }
+        if (!req.user) return res.sendStatus(401);
 
-        const candidate = {
+        const parsed = UpdateAvatarSchema.safeParse({
             user_id: req.user.id,
             avatar:  req.file,
-        }
-
-        const parsed = UpdateAvatarSchema.safeParse(candidate);
+        });
         if (!parsed.success) {
             log.error("Validation error in uploadAvatar", { errors: parsed.error });
 
@@ -137,36 +134,12 @@ export default class ProfileController {
         }
 
         try {
-            const file = (req as any).file as { mimetype: string; size: number; buffer: Buffer } | undefined;
-            if (!file) {
-                return res.status(400).json({ message: "File 'avatar' is required" });
-            }
+            await this.domain.updateAvatar(parsed.data);
 
-            if (file.mimetype !== "image/png") {
-                return res.status(415).json({ message: "Only PNG is allowed" });
-            }
-            if (file.size > 10 * 1024 * 1024) {
-                return res.status(413).json({ message: "Max size is 10MB" });
-            }
-
-            const user = await this.domain.updateAvatar(parsed.data);
-            if (!user) {
-                return res.status(404).json({ message: "User not found" });
-            }
-
-            const { url, key } = await putUserAvatarPNG(String(req.user.id), file.buffer);
-            const bustUrl = `${url}?v=${Date.now()}`;
-
-            return res.status(200).json({ ok: true, key, url: bustUrl });
+            return res.sendStatus(201);
         } catch (err: any) {
             log.error("Error in uploadAvatar", { error: err });
 
-            if (err?.message?.includes("File too large")) {
-                return res.status(413).json({ message: "Max size is 10MB" });
-            }
-            if (err?.message?.includes("Only image/png")) {
-                return res.status(415).json({ message: "Only PNG is allowed" });
-            }
             next(err);
         }
     }

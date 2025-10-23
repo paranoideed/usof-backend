@@ -24,5 +24,11 @@ run-service-ts:
 migrate-up-js: build-js
 	KV_VIPER_FILE=$(CONFIG_FILE) node dist/index.js migrate up
 
+migrate-up-ts:
+	KV_VIPER_FILE=$(CONFIG_FILE) npx tsx src/index.ts migrate up
+
 migrate-down-js: build-js
 	KV_VIPER_FILE=$(CONFIG_FILE) node dist/index.js migrate down
+
+migrate-down-ts:
+	KV_VIPER_FILE=$(CONFIG_FILE) npx tsx src/index.ts migrate down

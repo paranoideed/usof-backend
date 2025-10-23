@@ -1,6 +1,6 @@
 import { v4 as uuid } from "uuid";
 
-import database, {Database} from "../../data/database";
+import database, {Database} from "../../stprage/sql/database";
 
 import {
     CreateCommentInput,
@@ -13,10 +13,10 @@ import {
     UpdateCommentInput
 } from "./comment.dto";
 import {
-    ForbiddenError,
-    InternalError,
-    NotFoundError,
-    UnauthorizedError,
+    Forbidden,
+    Internal,
+    NotFound,
+    Unauthorized,
 } from "../../api/errors";
 
 export type CommentData = {
@@ -70,34 +70,34 @@ export default class CommentDomain {
     private async checkRight(initiatorId: string, postId: string): Promise<void> {
         const initiator = await this.db.users().filterID(initiatorId).get();
         if (!initiator) {
-            throw new UnauthorizedError('Initiator profile not found');
+            throw new Unauthorized('Initiator profile not found');
         }
 
         const comment = await this.db.comments().filterID(postId).get();
         if (!comment) {
-            throw new NotFoundError('Comment not found');
+            throw new NotFound('Comment not found');
         }
 
         if (initiator.id !== comment.author_id && initiator.role !== 'admin') {
-            throw new ForbiddenError('Permission denied');
+            throw new Forbidden('Permission denied');
         }
     }
 
     public async createComment(params: CreateCommentInput): Promise<Comment> {
         const user = await this.db.users().filterID(params.author_id).get();
         if (!user) {
-            throw new UnauthorizedError('Initiator are not found');
+            throw new Unauthorized('Initiator are not found');
         }
 
         const post = await this.db.posts().filterID(params.post_id).get();
         if (!post) {
-            throw new NotFoundError('Post not found');
+            throw new NotFound('Post not found');
         }
 
         if (params.parent_id) {
             const parentComment = await this.db.comments().filterID(params.parent_id).get();
             if (!parentComment) {
-                throw new NotFoundError('Parent comment not found');
+                throw new NotFound('Parent comment not found');
             }
         }
 
@@ -105,7 +105,6 @@ export default class CommentDomain {
         await this.db.transaction(async (trx) => {
             const row = await trx.comments.insert({
                 id:              commID,
-                author_username: user.username,
                 post_id:         params.post_id,
                 author_id:       params.author_id,
                 parent_id:       params.parent_id || null,
@@ -113,7 +112,7 @@ export default class CommentDomain {
                 created_at:      new Date(),
             });
             if (!row) {
-                throw new InternalError('Failed to create comment');
+                throw new Internal('Failed to create comment');
             }
 
             if (params.parent_id) {
@@ -129,7 +128,7 @@ export default class CommentDomain {
             filterID(params.comment_id).
             getWithDetails(params.initiator_id);
         if (!row) {
-            throw new NotFoundError('Comment not found');
+            throw new NotFound('Comment not found');
         }
         return row;
     }
@@ -171,11 +170,11 @@ export default class CommentDomain {
     public async updateComment(params: UpdateCommentInput): Promise<Comment> {
         const row = await this.db.comments().filterID(params.comment_id).get();
         if (!row) {
-            throw new NotFoundError('Comment not found');
+            throw new NotFound('Comment not found');
         }
 
         if (row.author_id !== params.author_id) {
-            throw new ForbiddenError('Permission denied, only author can update comment');
+            throw new Forbidden('Permission denied, only author can update comment');
         }
 
         const now = new Date();
@@ -193,7 +192,7 @@ export default class CommentDomain {
 
         const comment = await this.db.comments().filterID(params.comment_id).get();
         if (!comment) {
-            throw new NotFoundError('Comment not found');
+            throw new NotFound('Comment not found');
         }
 
         await this.db.transaction(async (trx) => {
@@ -208,12 +207,12 @@ export default class CommentDomain {
     public async likeComment(params: LikeCommentInput): Promise<Comment> {
         const user = await this.db.users().filterID(params.author_id).get();
         if (!user) {
-            throw new NotFoundError('User not found');
+            throw new NotFound('User not found');
         }
 
         const comment = await this.db.comments().filterID(params.comment_id).get();
         if (!comment) {
-            throw new NotFoundError('Comment not found');
+            throw new NotFound('Comment not found');
         }
 
         await this.db.commentLikes().upsert({
@@ -231,12 +230,12 @@ export default class CommentDomain {
     public async deleteLike(params: DeleteLikeCommentInput): Promise<Comment> {
         const user = await this.db.users().filterID(params.author_id).get();
         if (!user) {
-            throw new NotFoundError('User not found');
+            throw new NotFound('User not found');
         }
 
         const comment = await this.db.comments().filterID(params.comment_id).get();
         if (!comment) {
-            throw new NotFoundError('Comment not found');
+            throw new NotFound('Comment not found');
         }
 
         await this.db.commentLikes().filterCommentID(params.comment_id).filterAuthorID(params.author_id).delete();
