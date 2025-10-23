@@ -22,7 +22,7 @@ export default class CommentController {
         this.domain = new CommentDomain();
     }
     
-    async createComment(req: Request, res: Response, next: NextFunction) {
+    async createComment(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             author_id:  req.user?.id,
             post_id:    req.body?.post_id,
@@ -51,7 +51,7 @@ export default class CommentController {
         }
     }
 
-    async getComment(req: Request, res: Response, next: NextFunction) {
+    async getComment(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         let candidate = {
             comment_id: req.params.comment_id,
             initiator_id:    req.user?.id,
@@ -76,7 +76,7 @@ export default class CommentController {
         }
     }
 
-    async listComments(req: Request, res: Response, next: NextFunction) {
+    async listComments(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             initiator_id:    req.user?.id,
             post_id:         req.query?.post_id,
@@ -116,7 +116,7 @@ export default class CommentController {
     }
 
     
-    async updateComment(req: Request, res: Response, next: NextFunction) {
+    async updateComment(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             comment_id: req.params.comment_id,
             author_id:  req.user?.id,
@@ -142,7 +142,7 @@ export default class CommentController {
         }
     }
 
-    async deleteComment(req: Request, res: Response, next: NextFunction) {
+    async deleteComment(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             comment_id: req.params.comment_id,
             author_id:  req.user?.id,
@@ -167,7 +167,7 @@ export default class CommentController {
         }
     }
 
-    async like(req: Request, res: Response, next: NextFunction) {
+    async like(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             author_id:  req.user?.id,
             comment_id: req.params?.comment_id,
@@ -192,7 +192,7 @@ export default class CommentController {
         }
     }
 
-    async deleteLike(req: Request, res: Response, next: NextFunction) {
+    async deleteLike(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             author_id:  req.user?.id,
             comment_id: req.params?.comment_id,
@@ -216,7 +216,7 @@ export default class CommentController {
         }
     }
 
-    async ListLikes(req: Request, res: Response, next: NextFunction) {
+    async ListLikes(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             comment_id: req.params?.comment_id,
             author_id:  req.query?.user_id,

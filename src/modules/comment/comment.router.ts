@@ -12,14 +12,14 @@ const commentController = new CommentController();
 commentRouter.post(
     "/",
     authMiddleware,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
         await commentController.createComment(req, res, next);
     }
 );
 
 commentRouter.get(
     "/",
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
         await commentController.listComments(req, res, next);
     }
 );
@@ -27,7 +27,7 @@ commentRouter.get(
 commentRouter.get(
     "/:comment_id",
     authMiddleware,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
         await commentController.getComment(req, res, next);
     }
 );
@@ -35,7 +35,7 @@ commentRouter.get(
 commentRouter.patch(
     "/:comment_id",
     authMiddleware,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
         await commentController.updateComment(req, res, next);
     }
 );
@@ -43,7 +43,7 @@ commentRouter.patch(
 commentRouter.delete(
     "/:comment_id",
     authMiddleware,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
         await commentController.deleteComment(req, res, next);
     }
 );
@@ -51,7 +51,7 @@ commentRouter.delete(
 commentRouter.post(
     "/:comment_id/like",
     authMiddleware,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
         await commentController.like(req, res, next);
     }
 );
@@ -59,7 +59,7 @@ commentRouter.post(
 commentRouter.delete(
     "/:comment_id/like",
     authMiddleware,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
         await commentController.deleteLike(req, res, next);
     }
 );
@@ -67,7 +67,7 @@ commentRouter.delete(
 commentRouter.get(
     "/:comment_id/like",
     authMiddleware,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
         await commentController.listComments(req, res, next);
     }
 );

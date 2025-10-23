@@ -9,8 +9,6 @@ import {
     UpdateProfileSchema,
 } from "./profile.dto";
 import ProfileDomain from "./profile.domain";
-import {putUserAvatarPNG} from "../../stprage/aws/s3";
-import {PayloadTooLarge, UnsupportedMediaType} from "../../api/errors";
 
 export default class ProfileController {
     private domain: ProfileDomain;
@@ -19,7 +17,7 @@ export default class ProfileController {
         this.domain = new ProfileDomain();
     }
 
-    async getOwnProfile(req: Request, res: Response, next: NextFunction) {
+    async getOwnProfile(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             user_id: req.user?.id,
         }
@@ -42,7 +40,7 @@ export default class ProfileController {
         }
     }
 
-    async getProfile(req: Request, res: Response, next: NextFunction) {
+    async getProfile(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             user_id:  req.params?.user_id,
             username: req.params?.username,
@@ -66,7 +64,7 @@ export default class ProfileController {
         }
     }
 
-    async listUsers(req: Request, res: Response, next: NextFunction) {
+    async listUsers(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             username: req.query?.username,
             limit:    req.query?.limit ? parseInt(req.query.limit as string, 10) : undefined,
@@ -91,7 +89,7 @@ export default class ProfileController {
         }
     }
 
-    async updateProfile(req: Request, res: Response, next: NextFunction) {
+    async updateProfile(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized" });
         }
@@ -120,7 +118,7 @@ export default class ProfileController {
         }
     }
 
-    async uploadAvatar(req: Request, res: Response, next: NextFunction) {
+    async uploadAvatar(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         if (!req.user) return res.sendStatus(401);
 
         const parsed = UpdateAvatarSchema.safeParse({

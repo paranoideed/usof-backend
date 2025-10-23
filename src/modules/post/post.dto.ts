@@ -20,7 +20,7 @@ export const ListPostsSchema = z.object({
     status:          z.enum(['active', 'closed']).optional(),
     title:           z.string().min(1).max(256).optional(),
 
-    order_by:  z.enum(['created_at','updated_at','likes','dislikes','rating']).default('rating'),
+    order_by:  z.enum(['newest','oldest','likes','dislikes','rating']).default('rating'),
     order_dir: z.enum(['asc','desc']).default('desc'),
 
     offset:  z.coerce.number().int().min(0).default(0),

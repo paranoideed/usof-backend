@@ -23,7 +23,7 @@ export default class PostController {
     }
 
     
-    async createPost(req: Request, res: Response, next: NextFunction) {
+    async createPost(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             author_id:  req.user?.id,
             title:      req.body?.title,
@@ -51,7 +51,7 @@ export default class PostController {
         }
     }
 
-    async getPost(req: Request, res: Response, next: NextFunction) {
+    async getPost(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             user_id: req.user?.id,
             post_id: req.params?.post_id,
@@ -75,7 +75,7 @@ export default class PostController {
         }
     }
 
-    async listPosts(req: Request, res: Response, next: NextFunction) {
+    async listPosts(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             user_id:         req.query?.user_id,
             status:          req.query?.status,
@@ -106,7 +106,7 @@ export default class PostController {
     }
 
     
-    async updatePost(req: Request, res: Response, next: NextFunction) {
+    async updatePost(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             post_id:      req.params?.post_id,
             initiator_id: req.user?.id,
@@ -135,7 +135,7 @@ export default class PostController {
         }
     }
     
-    async updatePostStatus(req: Request, res: Response, next: NextFunction) {
+    async updatePostStatus(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             initiator_id:   req.user?.id,
             initiator_role: req.user?.role,
@@ -166,7 +166,7 @@ export default class PostController {
         }
     }
 
-    async deletePost(req: Request, res: Response, next: NextFunction) {
+    async deletePost(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             initiator_id: req.user?.id,
             post_id:      req.params?.post_id,
@@ -190,7 +190,7 @@ export default class PostController {
         }
     }
 
-    async like(req: Request, res: Response, next: NextFunction) {
+    async like(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             initiator_id: req.user?.id,
             post_id:      req.params?.post_id,
@@ -214,7 +214,7 @@ export default class PostController {
         }
     }
 
-    async deleteLike(req: Request, res: Response, next: NextFunction) {
+    async deleteLike(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             initiator_id: req.user?.id,
             post_id:      req.params?.post_id,
@@ -237,7 +237,7 @@ export default class PostController {
         }
     }
 
-    async listLikes(req: Request, res: Response, next: NextFunction) {
+    async listLikes(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             post_id: req.params?.post_id,
             offset:  req.query?.offset,

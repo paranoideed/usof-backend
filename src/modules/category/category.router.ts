@@ -13,14 +13,14 @@ const categoryController = new CategoryController();
 
 categoryRouter.get(
     "/",
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
         await categoryController.listCategories(req, res, next);
     }
 );
 
 categoryRouter.get(
     "/:category_id",
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
         await categoryController.getCategory(req, res, next);
     }
 );
@@ -29,7 +29,7 @@ categoryRouter.post(
     "/",
     authMiddleware,
     adminOnlyMiddleware,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
         await categoryController.createCategory(req, res, next);
     }
 );
@@ -38,7 +38,7 @@ categoryRouter.patch(
     "/:category_id",
     authMiddleware,
     adminOnlyMiddleware,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
         await categoryController.updateCategory(req, res, next);
     }
 );
@@ -47,7 +47,7 @@ categoryRouter.delete(
     "/:category_id",
     authMiddleware,
     adminOnlyMiddleware,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
         await categoryController.deleteCategory(req, res, next);
     }
 );

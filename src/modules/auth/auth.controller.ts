@@ -17,7 +17,7 @@ export default class AuthController {
         this.domain = new AuthDomain();
     }
 
-    async register(req: Request, res: Response, next: NextFunction) {
+    async register(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             email:    req.body.email,
             username: req.body.username,
@@ -44,7 +44,7 @@ export default class AuthController {
     }
 
     
-    async registerByAdmin(req: Request, res: Response, next: NextFunction) {
+    async registerByAdmin(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             email:    req.body.email,
             username: req.body.username,
@@ -71,7 +71,7 @@ export default class AuthController {
     }
 
     
-    async login(req: Request, res: Response, next: NextFunction) {
+    async login(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             email:    req.body.email,
             username: req.body.username,
@@ -97,7 +97,7 @@ export default class AuthController {
     }
 
     
-    async resetPassword(req: Request, res: Response, next: NextFunction) {
+    async resetPassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             user_id:      req.user?.id,
             new_password: req.body.new_password,

@@ -14,6 +14,8 @@ import passwordHasher, {PasswordHasher} from "./password_hasher/hasher";
 
 
 export type UserToken = {
+    user_id: string;
+    username: string;
     token: string;
 }
 
@@ -67,6 +69,8 @@ export default class AuthDomain {
         const token = this.jwt.createToken(user.id, user.role);
 
         return {
+            user_id:  user.id,
+            username: user.username,
             token: token
         };
     }

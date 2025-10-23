@@ -238,8 +238,8 @@ export default class PostDomain {
 
         const asc = params.order_dir === 'asc';
         switch (params.order_by) {
-            case 'created_at': query = query.orderByCreatedAt(asc); break;
-            case 'updated_at': query = query.orderByUpdatedAt(asc); break;
+            case 'newest':     query = query.orderByCreatedAt(asc); break;
+            case 'oldest':     query = query.orderByCreatedAt(!asc); break;
             case 'likes':      query = query.orderByLikes(asc);     break;
             case 'dislikes':   query = query.orderByDislikes(asc);  break;
             case 'rating':     query = query.orderByRating(asc);    break; // likes - dislikes

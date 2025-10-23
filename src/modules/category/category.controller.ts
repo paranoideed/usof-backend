@@ -20,7 +20,7 @@ export default class CategoryController {
     }
 
     
-    async createCategory(req: Request, res: Response, next: NextFunction) {
+    async createCategory(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             title:       req.body?.title,
             description: req.body?.description,
@@ -44,7 +44,7 @@ export default class CategoryController {
         }
     }
 
-    async listCategories(req: Request, res: Response, next: NextFunction) {
+    async listCategories(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             limit:  req.query.limit,
             offset: req.query.offset,
@@ -73,7 +73,7 @@ export default class CategoryController {
         }
     }
 
-    async getCategory(req: Request, res: Response, next: NextFunction) {
+    async getCategory(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             category_id: req.params?.category_id,
         }
@@ -99,7 +99,7 @@ export default class CategoryController {
     }
 
     
-    async updateCategory(req: Request, res: Response, next: NextFunction) {
+    async updateCategory(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             category_id: req.params.category_id,
             title: req.body?.title,
@@ -124,7 +124,7 @@ export default class CategoryController {
         }
     }
 
-    async deleteCategory(req: Request, res: Response, next: NextFunction) {
+    async deleteCategory(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             category_id: req.params?.category_id,
         }
