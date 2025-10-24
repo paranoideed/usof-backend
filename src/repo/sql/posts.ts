@@ -4,16 +4,17 @@ import { CategoryRow } from "./categories";
 export type PostStatus = 'active' | 'closed';
 
 export type PostRow = {
-    id:              string;
-    author_id:       string;
-    author_username: string; // из users.username
-    title:           string;
-    status:          PostStatus;
-    content:         string;
-    likes:           number;
-    dislikes:        number;
-    created_at:      Date;
-    updated_at:      Date | null;
+    id:                 string;
+    author_id:          string;
+    author_username:    string; // из users.username
+    author_avatar_url:  string; // из users.avatar_url ("" если NULL)
+    title:              string;
+    status:             PostStatus;
+    content:            string;
+    likes:              number;
+    dislikes:           number;
+    created_at:         Date;
+    updated_at:         Date | null;
 };
 
 export type PostWithDetails = {
@@ -57,8 +58,8 @@ export default class PostsQ {
         };
         await this.builder.client!.queryBuilder().table('posts').insert(dataDb);
 
-        // Вернём в ожидаемой форме с author_username = '' (реальный username подтягивай через get/getWithDetails)
-        const data: PostRow = { ...dataDb, author_username: '' };
+        // Вернём в ожидаемой форме с пустыми author_username / author_avatar_url
+        const data: PostRow = { ...dataDb, author_username: '', author_avatar_url: '' };
         return data;
     }
 
@@ -100,6 +101,7 @@ export default class PostsQ {
                 this.C('id'),
                 this.C('author_id'),
                 client.raw('u.username AS author_username'),
+                client.raw('u.avatar_url AS author_avatar_url'), // + avatar
                 this.C('title'),
                 this.C('status'),
                 this.C('content'),
@@ -116,6 +118,7 @@ export default class PostsQ {
             id: row.id,
             author_id: row.author_id,
             author_username: String(row.author_username ?? ''),
+            author_avatar_url: String(row.author_avatar_url ?? ''), // + avatar
             title: row.title,
             status: row.status,
             content: row.content,
@@ -136,6 +139,7 @@ export default class PostsQ {
                 this.C('id'),
                 this.C('author_id'),
                 client.raw('u.username AS author_username'),
+                client.raw('u.avatar_url AS author_avatar_url'), // + avatar
                 this.C('title'),
                 this.C('status'),
                 this.C('content'),
@@ -149,6 +153,7 @@ export default class PostsQ {
             id: r.id,
             author_id: r.author_id,
             author_username: String(r.author_username ?? ''),
+            author_avatar_url: String(r.author_avatar_url ?? ''), // + avatar
             title: r.title,
             status: r.status,
             content: r.content,
@@ -200,6 +205,7 @@ export default class PostsQ {
                 this.C('id'),
                 this.C('author_id'),
                 client.raw('u.username AS author_username'),
+                client.raw('u.avatar_url AS author_avatar_url'), // + avatar
                 this.C('title'),
                 this.C('status'),
                 this.C('content'),
@@ -218,6 +224,7 @@ export default class PostsQ {
             id: row.id,
             author_id: row.author_id,
             author_username: String(row.author_username ?? ''),
+            author_avatar_url: String(row.author_avatar_url ?? ''), // + avatar
             title: row.title,
             status: row.status,
             content: row.content,
@@ -272,6 +279,7 @@ export default class PostsQ {
                 this.C('id'),
                 this.C('author_id'),
                 client.raw('u.username AS author_username'),
+                client.raw('u.avatar_url AS author_avatar_url'), // + avatar
                 this.C('title'),
                 this.C('status'),
                 this.C('content'),
@@ -288,6 +296,7 @@ export default class PostsQ {
                 id: row.id,
                 author_id: row.author_id,
                 author_username: String(row.author_username ?? ''),
+                author_avatar_url: String(row.author_avatar_url ?? ''), // + avatar
                 title: row.title,
                 status: row.status,
                 content: row.content,

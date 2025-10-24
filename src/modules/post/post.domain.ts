@@ -22,16 +22,17 @@ import {
 import {Category} from "../category/category.domain";
 
 export type PostData = {
-    id:              string;
-    author_id:       string;
-    author_username: string;
-    title:           string;
-    status:          string;
-    content:         string;
-    likes:           number;
-    dislikes:        number;
-    created_at:      Date;
-    updated_at:      Date | null;
+    id:                 string;
+    author_id:          string;
+    author_username:    string;
+    author_avatar_url:  string | null;
+    title:              string;
+    status:             string;
+    content:            string;
+    likes:              number;
+    dislikes:           number;
+    created_at:         Date;
+    updated_at:         Date | null;
 }
 
 export type PostsList = {
@@ -227,10 +228,11 @@ export default class PostDomain {
         if (params.author_id) {
             query = query.filterAuthorID(params.author_id);
         }
-
+        if (params.author_username) {
+            query = query.filterUsername(params.author_username);
+        }
         if (params.status) query = query.filterStatus(params.status);
         if (params.title)  query = query.filterTitleLike(params.title);
-
         if (params.category_id != null) {
             query.filterCategory(params.category_id)
         }

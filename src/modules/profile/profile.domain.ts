@@ -1,18 +1,19 @@
 import database, {Database} from '../../repo/sql/database';
 
 import {
+    DeleteProfileInput,
     GetProfileInput,
-    GetProfilesInput, UpdateAvatarInput,
+    ListProfilesInput, UpdateAvatarInput,
     UpdateProfileInput,
 } from "./profile.dto";
-import {NotFound, PayloadTooLarge, UnsupportedMediaType} from "../../api/errors";
-import {putUserAvatar} from "../../repo/aws/s3";
-import log from "../../utils/logger";
+import {NotFound} from "../../api/errors";
+import {deleteS3Object, getKeyFromUrl, putUserAvatar} from "../../repo/aws/s3";
 
 export type Profile = {
     id:         string;
     username:   string;
     pseudonym:  string | null;
+    avatar_url: string | null;
     reputation: number;
     created_at: Date;
     updated_at: Date | null;
@@ -51,7 +52,7 @@ export default class ProfileDomain {
         return user;
     }
 
-    async listProfiles(params: GetProfilesInput): Promise<ProfileList> {
+    async listProfiles(params: ListProfilesInput): Promise<ProfileList> {
         const query = this.db.users();
         if (params.username && params.username.trim() !== '') {
             query.filterUsernameLike(`%${params.username.trim()}%`);
@@ -91,13 +92,64 @@ export default class ProfileDomain {
         return updated;
     }
 
-    async updateAvatar(params: UpdateAvatarInput): Promise<void> {
+    async updateAvatar(params: UpdateAvatarInput): Promise<Profile> {
         const user = await this.db.users().filterID(params.user_id).get();
         if (!user) throw new NotFound('User not found');
 
-        await putUserAvatar(String(params.user_id), params.avatar.buffer, params.avatar.mimetype);
+        const oldAvatarUrl = user.avatar_url;
+
+        const { url: newAvatarUrl } = await putUserAvatar(
+            params.user_id,
+            params.avatar.buffer,
+            params.avatar.mimetype
+        );
+
+        const now = new Date();
+
+        await this.db.users().filterID(params.user_id).update({
+            updated_at: now,
+            avatar_url: newAvatarUrl,
+        })
+
+        if (oldAvatarUrl) {
+            const oldKey = getKeyFromUrl(oldAvatarUrl);
+            if (oldKey) {
+                await deleteS3Object(oldKey);
+            }
+        }
+
+        user.avatar_url = newAvatarUrl;
+        user.updated_at = now;
+
+        return user;
     }
 
+    async deleteAvatar(user_id: string): Promise<Profile> {
+        const user = await this.db.users().filterID(user_id).get();
+        if (!user) throw new NotFound('User not found');
+
+        const oldAvatarUrl = user.avatar_url;
+        if (!oldAvatarUrl) {
+            return user;
+        }
+
+        const oldKey = getKeyFromUrl(oldAvatarUrl);
+        if (oldKey) {
+            await deleteS3Object(oldKey);
+        }
+
+        const now = new Date();
+
+        await this.db.users().filterID(user_id).update({
+            updated_at: now,
+            avatar_url: null,
+        });
+
+        user.avatar_url = null;
+        user.updated_at = now;
+
+        return user;
+    }
 
     async deleteProfile(user_id: string): Promise<void> {
         const user = await this.db.users().filterID(user_id).get();

@@ -5,7 +5,7 @@ import log from "../../utils/logger";
 
 import {
     GetProfileSchema,
-    GetProfilesSchema, UpdateAvatarSchema,
+    ListProfilesSchema, UpdateAvatarSchema,
     UpdateProfileSchema,
 } from "./profile.dto";
 import ProfileDomain from "./profile.domain";
@@ -72,7 +72,7 @@ export default class ProfileController {
             offset:   req.query?.offset ? parseInt(req.query.offset as string, 10) : undefined,
         }
 
-        const parsed = GetProfilesSchema.safeParse(candidate);
+        const parsed = ListProfilesSchema.safeParse(candidate);
         if (!parsed.success) {
             log.error("Validation error in listUsers", { errors: parsed.error });
 
@@ -150,9 +150,9 @@ export default class ProfileController {
         }
 
         try {
-            await this.domain.updateAvatar(parsed.data);
+            const user = await this.domain.updateAvatar(parsed.data);
 
-            return res.sendStatus(201);
+            return res.status(200).json(user);
         } catch (err: any) {
             log.error("Error in uploadAvatar", { error: err });
 

@@ -77,7 +77,8 @@ export default class PostController {
 
     async listPosts(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
-            user_id:         req.query?.user_id,
+            author_id:       req.query?.author_id,
+            author_username: req.query?.author_username,
             status:          req.query?.status,
             title:           req.query?.title,
             category_id:     req.query?.category_id,

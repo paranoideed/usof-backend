@@ -11,11 +11,11 @@ import {
 } from "./auth.dto";
 import tokenManager, {TokenManager} from "./tokens_manager/manager";
 import passwordHasher, {PasswordHasher} from "./password_hasher/hasher";
+import {Profile} from "../profile/profile.domain";
 
 
 export type UserToken = {
-    user_id: string;
-    username: string;
+    profile: Profile;
     token: string;
 }
 
@@ -69,8 +69,7 @@ export default class AuthDomain {
         const token = this.jwt.createToken(user.id, user.role);
 
         return {
-            user_id:  user.id,
-            username: user.username,
+            profile:  user,
             token:    token
         };
     }

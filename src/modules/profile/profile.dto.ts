@@ -28,8 +28,9 @@ export const GetProfileSchema = z.object({
     }
 });
 
-export const GetProfilesSchema = z.object({
+export const ListProfilesSchema = z.object({
     username: z.string().optional(),
+
     offset:   z.coerce.number().int().min(0).default(0),
     limit:    z.coerce.number().int().min(1).max(100).default(20),
 });
@@ -60,7 +61,7 @@ export const UpdateAvatarSchema = z.object({
 });
 
 export type GetProfileInput    = z.infer<typeof GetProfileSchema>;
-export type GetProfilesInput   = z.infer<typeof GetProfilesSchema>;
+export type ListProfilesInput = z.infer<typeof ListProfilesSchema>;
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
 export type UpdateAvatarInput  = z.infer<typeof UpdateAvatarSchema>;
 export type DeleteProfileInput = z.infer<typeof DeleteProfileSchema>;
