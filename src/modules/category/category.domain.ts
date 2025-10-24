@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 
-import database, {Database} from '../../stprage/sql/database';
+import database, {Database} from '../../repo/sql/database';
 
 import {
     GetCategoryInput,

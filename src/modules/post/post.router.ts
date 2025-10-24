@@ -12,7 +12,7 @@ const postController = new PostController();
 postRouter.post(
     "/",
     authMiddleware,
-    async (req: Request, res: Response, next: NextFunction): Promise<Response | void> : Promise<void> => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
         await postController.createPost(req, res, next);
     }
 );
@@ -20,7 +20,7 @@ postRouter.post(
 postRouter.get(
     "/",
     authMiddleware,
-    async (req: Request, res: Response, next: NextFunction): Promise<Response | void> : Promise<void> => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
         await postController.listPosts(req, res, next);
     }
 );
@@ -36,7 +36,7 @@ postRouter.get(
 postRouter.put(
     "/:post_id",
     authMiddleware,
-    async (req: Request, res: Response, next: NextFunction): Promise<Response | void> : Promise<void> => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
         await postController.updatePost(req, res, next);
     }
 );
@@ -44,7 +44,7 @@ postRouter.put(
 postRouter.delete(
     "/:post_id",
     authMiddleware,
-    async (req: Request, res: Response, next: NextFunction): Promise<Response | void> : Promise<void> => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
         await postController.deletePost(req, res, next);
     }
 );
@@ -52,7 +52,7 @@ postRouter.delete(
 postRouter.post(
     "/:post_id/like",
     authMiddleware,
-    async (req: Request, res: Response, next: NextFunction): Promise<Response | void> : Promise<void> => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
         await postController.like(req, res, next);
     }
 );
@@ -60,7 +60,7 @@ postRouter.post(
 postRouter.patch(
     "/:post_id/status",
     authMiddleware,
-    async (req: Request, res: Response, next: NextFunction): Promise<Response | void> : Promise<void> => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
         await postController.updatePostStatus(req, res, next);
     }
 );
@@ -68,14 +68,14 @@ postRouter.patch(
 postRouter.delete(
     "/:post_id/like",
     authMiddleware,
-    async (req: Request, res: Response, next: NextFunction): Promise<Response | void> : Promise<void> => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
         await postController.deleteLike(req, res, next);
     }
 );
 
 postRouter.get(
     "/:post_id/like",
-    async (req: Request, res: Response, next: NextFunction): Promise<Response | void> : Promise<void> => {
+    async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
         await postController.listLikes(req, res, next);
     }
 );

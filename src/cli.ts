@@ -1,5 +1,5 @@
 import log from "./utils/logger";
-import database from "./stprage/sql/database";
+import database from "./repo/sql/database";
 import app from "./app";
 
 export default class Cli {

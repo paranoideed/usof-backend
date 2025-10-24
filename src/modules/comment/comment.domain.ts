@@ -1,6 +1,6 @@
 import { v4 as uuid } from "uuid";
 
-import database, {Database} from "../../stprage/sql/database";
+import database, {Database} from "../../repo/sql/database";
 
 import {
     CreateCommentInput,
@@ -219,7 +219,6 @@ export default class CommentDomain {
             id:              uuid(),
             comment_id:      params.comment_id,
             author_id:       params.author_id,
-            author_username: user.username,
             type:            params.type,
             created_at:      new Date(),
         })

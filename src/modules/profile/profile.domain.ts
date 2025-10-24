@@ -1,4 +1,4 @@
-import database, {Database} from '../../stprage/sql/database';
+import database, {Database} from '../../repo/sql/database';
 
 import {
     GetProfileInput,
@@ -6,7 +6,7 @@ import {
     UpdateProfileInput,
 } from "./profile.dto";
 import {NotFound, PayloadTooLarge, UnsupportedMediaType} from "../../api/errors";
-import {putUserAvatarPNG} from "../../stprage/aws/s3";
+import {putUserAvatarPNG} from "../../repo/aws/s3";
 import log from "../../utils/logger";
 
 export type Profile = {

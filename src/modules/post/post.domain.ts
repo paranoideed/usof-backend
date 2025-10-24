@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 
-import database, {Database} from '../../stprage/sql/database';
+import database, {Database} from '../../repo/sql/database';
 import log from "../../utils/logger";
 
 import {
@@ -175,7 +175,6 @@ export default class PostDomain {
             id:              uuid(),
             post_id:         params.post_id,
             author_id:       params.initiator_id,
-            author_username: user.username,
             type:            params.type,
             created_at:      new Date(),
         });

@@ -2,7 +2,7 @@ import { v4 as uuid } from 'uuid';
 
 import {Conflict, Forbidden, Unauthorized} from "../../api/errors";
 
-import database, {Database} from "../../stprage/sql/database";
+import database, {Database} from "../../repo/sql/database";
 
 import {
     LoginInput,
@@ -71,7 +71,7 @@ export default class AuthDomain {
         return {
             user_id:  user.id,
             username: user.username,
-            token: token
+            token:    token
         };
     }
 

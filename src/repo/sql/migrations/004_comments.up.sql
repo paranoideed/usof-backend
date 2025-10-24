@@ -34,28 +34,27 @@ CREATE TABLE comment_likes (
     FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE RESTRICT
 );
 
-CREATE TRIGGER trg_comments_ai
-    AFTER INSERT ON comments
-    FOR EACH ROW
-BEGIN
-    IF NEW.parent_id IS NOT NULL THEN
-    UPDATE comments
-    SET replies_count = replies_count + 1
-    WHERE id = NEW.parent_id;
-END IF;
-END;
-
-
-CREATE TRIGGER trg_comments_ad
-    AFTER DELETE ON comments
-    FOR EACH ROW
-BEGIN
-    IF OLD.parent_id IS NOT NULL THEN
-    UPDATE comments
-    SET replies_count = GREATEST(replies_count - 1, 0)
-    WHERE id = OLD.parent_id;
-END IF;
-END;
+-- CREATE TRIGGER trg_comments_ai
+--     AFTER INSERT ON comments
+--     FOR EACH ROW
+-- BEGIN
+--     IF NEW.parent_id IS NOT NULL THEN
+--     UPDATE comments
+--     SET replies_count = replies_count + 1
+--     WHERE id = NEW.parent_id;
+-- END IF;
+-- END;
+--
+-- CREATE TRIGGER trg_comments_ad
+--     AFTER DELETE ON comments
+--     FOR EACH ROW
+-- BEGIN
+--     IF OLD.parent_id IS NOT NULL THEN
+--     UPDATE comments
+--     SET replies_count = GREATEST(replies_count - 1, 0)
+--     WHERE id = OLD.parent_id;
+-- END IF;
+-- END;
 
 CREATE TRIGGER trg_comment_likes_ai
     AFTER INSERT ON comment_likes
