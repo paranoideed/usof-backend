@@ -9,6 +9,7 @@ import {
     UpdateProfileSchema,
 } from "./profile.dto";
 import ProfileDomain from "./profile.domain";
+import {PayloadTooLarge, UnsupportedMediaType} from "../../api/errors";
 
 export default class ProfileController {
     private domain: ProfileDomain;
@@ -129,6 +130,23 @@ export default class ProfileController {
             log.error("Validation error in uploadAvatar", { errors: parsed.error });
 
             return res.status(400).json(z.treeifyError(parsed.error));
+        }
+
+        if (!["image/png", "image/jpeg", "image/gif"].includes(parsed.data.avatar.mimetype)) {
+            log.error("Avatar upload failed: unsupported media type", {
+                user_id: parsed.data.user_id,
+                mimetype: parsed.data.avatar.mimetype,
+            });
+
+            throw new UnsupportedMediaType("Only image/png is allowed");
+        }
+        if (parsed.data.avatar.size > 10 * 1024 * 1024) {
+            log.error("Avatar upload failed: file too large", {
+                user_id: parsed.data.user_id,
+                size: parsed.data.avatar.size,
+            });
+
+            throw new PayloadTooLarge("File too large: max 10MB");
         }
 
         try {

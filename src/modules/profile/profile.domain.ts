@@ -6,7 +6,7 @@ import {
     UpdateProfileInput,
 } from "./profile.dto";
 import {NotFound, PayloadTooLarge, UnsupportedMediaType} from "../../api/errors";
-import {putUserAvatarPNG} from "../../repo/aws/s3";
+import {putUserAvatar} from "../../repo/aws/s3";
 import log from "../../utils/logger";
 
 export type Profile = {
@@ -95,16 +95,7 @@ export default class ProfileDomain {
         const user = await this.db.users().filterID(params.user_id).get();
         if (!user) throw new NotFound('User not found');
 
-        if (params.avatar.mimetype !== "image/png") {
-            log.error("Avatar upload failed: unsupported media type", { user_id: params.user_id, mimetype: params.avatar.mimetype });
-            throw new UnsupportedMediaType("Only image/png is allowed");
-        }
-        if (params.avatar.size > 10 * 1024 * 1024) {
-            log.error("Avatar upload failed: file too large", { user_id: params.user_id, size: params.avatar.size });
-            throw new PayloadTooLarge("File too large: max 10MB");
-        }
-
-        await putUserAvatarPNG(String(params.user_id), params.avatar.buffer);
+        await putUserAvatar(String(params.user_id), params.avatar.buffer, params.avatar.mimetype);
     }
 
 

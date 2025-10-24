@@ -15,19 +15,22 @@ export const s3 = new S3Client({
     },
 });
 
+
 export function avatarKey(userId: string) {
-    return `user/${userId}/avatar.png`;
+    return `user/${userId}/avatar`;
 }
 
-export async function putUserAvatarPNG(userId: string, data: Buffer) {
+export async function putUserAvatar(
+    userId: string,
+    data: Buffer,
+    contentType: string,
+) {
     const key = avatarKey(userId);
     await s3.send(new PutObjectCommand({
         Bucket: bucket,
         Key: key,
         Body: data,
-        ContentType: "image/png",
+        ContentType: contentType,
         CacheControl: "public, max-age=31536000, immutable",
-        // ACL: "public-read", // если бакет/политики позволяют публичный доступ
     }));
-    // return { key, url: `${publicBase}/${key}` };
 }
