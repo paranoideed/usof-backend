@@ -4,5 +4,9 @@ node_modules
 dist
 .env
 
+.dockerignore
+Dockerfile
+docker-compose.yml
+
 *.js
 *.js.map

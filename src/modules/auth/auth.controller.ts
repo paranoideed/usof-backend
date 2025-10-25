@@ -21,7 +21,7 @@ export default class AuthController {
     }
 
     async register(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if (req.body?.type !== "register") {
+        if (req.body?.data?.type !== "register") {
             return res.status(400).json({ message: "Invalid type" });
         }
 
@@ -50,7 +50,7 @@ export default class AuthController {
     }
 
     async registerByAdmin(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if (req.body?.type !== "register") {
+        if (req.body?.data?.type !== "register") {
             return res.status(400).json({ message: "Invalid type" });
         }
 
@@ -80,7 +80,7 @@ export default class AuthController {
     }
 
     async login(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if (req.body?.type !== "login") {
+        if (req.body?.data?.type !== "login") {
             return res.status(400).json({ message: "Invalid type" });
         }
 

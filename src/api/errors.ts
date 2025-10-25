@@ -7,7 +7,8 @@ export type ErrorCode =
     | "UNPROCESSABLE"
     | "TOO_MANY_REQUESTS"
     | "INTERNAL"
-    | "METHOD_NOT_ALLOWED";
+    | "METHOD_NOT_ALLOWED"
+    | "PAYLOAD_TOO_LARGE";
 
 export class HttpError extends Error {
     readonly status: number;
@@ -67,7 +68,7 @@ export class MethodNotAllowed extends HttpError {
 
 export class PayloadTooLarge extends HttpError {
     constructor(message = "Payload too large", details?: unknown) {
-        super(413, "TOO_MANY_REQUESTS", message, details);
+        super(413, "PAYLOAD_TOO_LARGE", message, details);
     }
 }
 

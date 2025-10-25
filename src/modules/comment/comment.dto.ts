@@ -4,7 +4,7 @@ export const CreateCommentSchema = z.object({
     post_id:   z.uuid(),
     author_id: z.uuid(),
     parent_id: z.uuid().nullable().optional(),
-    content:   z.string().min(1).max(1000),
+    content:   z.string().min(1).max(10000),
 });
 
 export const GetCommentSchema = z.object({
@@ -15,7 +15,7 @@ export const GetCommentSchema = z.object({
 export const UpdateCommentSchema = z.object({
     comment_id: z.uuid(),
     author_id:  z.uuid(),
-    content:    z.string().min(1).max(1000),
+    content:    z.string().min(1).max(10000),
 })
 
 export const DeleteCommentSchema = z.object({

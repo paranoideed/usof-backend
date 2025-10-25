@@ -6,9 +6,9 @@ CREATE TABLE comments (
 
     replies_count INT NOT NULL DEFAULT 0,
 
-    content    VARCHAR(4096) NOT NULL,
-    likes      INT           NOT NULL DEFAULT 0,
-    dislikes   INT           NOT NULL DEFAULT 0,
+    content    VARCHAR(10000) NOT NULL,
+    likes      INT            NOT NULL DEFAULT 0,
+    dislikes   INT            NOT NULL DEFAULT 0,
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT NULL,
@@ -30,31 +30,8 @@ CREATE TABLE comment_likes (
 
     UNIQUE(comment_id, author_id),
     FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
-
     FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE RESTRICT
 );
-
--- CREATE TRIGGER trg_comments_ai
---     AFTER INSERT ON comments
---     FOR EACH ROW
--- BEGIN
---     IF NEW.parent_id IS NOT NULL THEN
---     UPDATE comments
---     SET replies_count = replies_count + 1
---     WHERE id = NEW.parent_id;
--- END IF;
--- END;
---
--- CREATE TRIGGER trg_comments_ad
---     AFTER DELETE ON comments
---     FOR EACH ROW
--- BEGIN
---     IF OLD.parent_id IS NOT NULL THEN
---     UPDATE comments
---     SET replies_count = GREATEST(replies_count - 1, 0)
---     WHERE id = OLD.parent_id;
--- END IF;
--- END;
 
 CREATE TRIGGER trg_comment_likes_ai
     AFTER INSERT ON comment_likes
@@ -80,13 +57,13 @@ BEGIN
             dislikes = GREATEST(dislikes + (NEW.`type` = 'dislike') - (OLD.`type` = 'dislike'), 0)
         WHERE id = NEW.comment_id;
 
---         UPDATE users
---         SET reputation = reputation + CASE
---             WHEN OLD.`type` = 'like'    AND NEW.`type` = 'dislike' THEN -2
---             WHEN OLD.`type` = 'dislike' AND NEW.`type` = 'like'    THEN  2
---             ELSE 0
---         END
---         WHERE id = (SELECT c.author_id FROM comments c WHERE c.id = NEW.comment_id);
+        UPDATE users
+        SET reputation = reputation + CASE
+            WHEN OLD.`type` = 'like'    AND NEW.`type` = 'dislike' THEN -2
+            WHEN OLD.`type` = 'dislike' AND NEW.`type` = 'like'    THEN  2
+            ELSE 0
+        END
+        WHERE id = (SELECT c.author_id FROM comments c WHERE c.id = NEW.comment_id);
     END IF;
 END;
 
@@ -99,9 +76,9 @@ BEGIN
         dislikes = GREATEST(dislikes - (OLD.`type` = 'dislike'), 0)
     WHERE id = OLD.comment_id;
 
---     UPDATE users
---     SET reputation = reputation + CASE WHEN OLD.`type` = 'like' THEN -1 ELSE 1 END
---     WHERE id = (SELECT c.author_id FROM comments c WHERE c.id = OLD.comment_id);
+    UPDATE users
+    SET reputation = reputation + CASE WHEN OLD.`type` = 'like' THEN -1 ELSE 1 END
+    WHERE id = (SELECT c.author_id FROM comments c WHERE c.id = OLD.comment_id);
 END;
 
 CREATE INDEX idx_comment_likes_comment_id ON comment_likes (comment_id);

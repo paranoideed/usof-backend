@@ -1,4 +1,4 @@
-version: "3.9" # Этот 'version' можно удалить, он устарел
+version: "3.9"
 
 services:
   mysql:
@@ -34,6 +34,7 @@ services:
     restart: unless-stopped
     ports:
       - "8815:8080"
+
     environment:
       KV_VIPER_FILE: /app/config.yaml
 

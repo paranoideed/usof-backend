@@ -237,13 +237,14 @@ export default class PostDomain {
         switch (params.order_by) {
             case 'newest':     query = query.orderByCreatedAt(asc); break;
             case 'oldest':     query = query.orderByCreatedAt(!asc); break;
-            case 'likes':      query = query.orderByLikes(asc);     break;
-            case 'dislikes':   query = query.orderByDislikes(asc);  break;
-            case 'rating':     query = query.orderByRating(asc);    break; // likes - dislikes
+            case 'likes':      query = query.orderByLikes(asc).orderByCreatedAt(true); break;
+            case 'dislikes':   query = query.orderByDislikes(asc).orderByCreatedAt(true); break;
+            case 'rating':     query = query.orderByRating(asc).orderByCreatedAt(true); break;
+            default:           query = query.orderByRating(asc); break;
         }
 
         const total = await query.count();
-        const rows  = await query.page(params.limit, params.offset).select(params.initiator_id);;
+        const rows  = await query.page(params.limit, params.offset).select(params.initiator_id);
 
         return {
             posts: rows,

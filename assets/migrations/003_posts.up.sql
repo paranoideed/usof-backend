@@ -42,9 +42,9 @@ BEGIN
         dislikes = dislikes + CASE WHEN NEW.type = 'dislike' THEN 1 ELSE 0 END
     WHERE id = NEW.post_id;
 
---     UPDATE users
---     SET reputation = reputation + CASE WHEN NEW.type = 'like' THEN 1 ELSE -1 END
---     WHERE id = (SELECT p.author_id FROM posts p WHERE p.id = NEW.post_id);
+    UPDATE users
+    SET reputation = reputation + CASE WHEN NEW.type = 'like' THEN 1 ELSE -1 END
+    WHERE id = (SELECT p.author_id FROM posts p WHERE p.id = NEW.post_id);
 END;
 
 CREATE TRIGGER trg_post_likes_after_update
@@ -57,13 +57,13 @@ BEGIN
             dislikes = GREATEST(dislikes + CASE WHEN NEW.type = 'dislike' THEN 1 ELSE -1 END, 0)
         WHERE id = NEW.post_id;
 
---         UPDATE users
---         SET reputation = reputation + CASE
---             WHEN OLD.type = 'like'    AND NEW.type = 'dislike' THEN -2
---             WHEN OLD.type = 'dislike' AND NEW.type = 'like'    THEN  2
---             ELSE 0
---         END
---         WHERE id = (SELECT p.author_id FROM posts p WHERE p.id = NEW.post_id);
+        UPDATE users
+        SET reputation = reputation + CASE
+            WHEN OLD.type = 'like'    AND NEW.type = 'dislike' THEN -2
+            WHEN OLD.type = 'dislike' AND NEW.type = 'like'    THEN  2
+            ELSE 0
+        END
+        WHERE id = (SELECT p.author_id FROM posts p WHERE p.id = NEW.post_id);
     END IF;
 END;
 
@@ -76,9 +76,9 @@ BEGIN
         dislikes = GREATEST(dislikes - CASE WHEN OLD.type = 'dislike' THEN 1 ELSE 0 END, 0)
     WHERE id = OLD.post_id;
 
---     UPDATE users
---     SET reputation = reputation + CASE WHEN OLD.type = 'like' THEN -1 ELSE 1 END
---     WHERE id = (SELECT p.author_id FROM posts p WHERE p.id = OLD.post_id);
+    UPDATE users
+    SET reputation = reputation + CASE WHEN OLD.type = 'like' THEN -1 ELSE 1 END
+    WHERE id = (SELECT p.author_id FROM posts p WHERE p.id = OLD.post_id);
 END;
 
 
