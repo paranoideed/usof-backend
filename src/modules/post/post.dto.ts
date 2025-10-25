@@ -52,7 +52,7 @@ export const UpdatePostStatusSchema = z.object({
 });
 
 export const DeletePostSchema = z.object({
-    initiator_id:       z.uuid(),
+    initiator_id:    z.uuid(),
     post_id:         z.uuid(),
 });
 

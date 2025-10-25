@@ -21,20 +21,6 @@ import {
 } from "../../api/errors";
 import {Category} from "../category/category.domain";
 
-export type PostData = {
-    id:                 string;
-    author_id:          string;
-    author_username:    string;
-    author_avatar_url:  string | null;
-    title:              string;
-    status:             string;
-    content:            string;
-    likes:              number;
-    dislikes:           number;
-    created_at:         Date;
-    updated_at:         Date | null;
-}
-
 export type PostsList = {
     posts: Post[];
     pagination: {
@@ -45,9 +31,19 @@ export type PostsList = {
 };
 
 export type Post = {
-    data:          PostData;
-    categories:    Category[];
-    user_reaction: string | null;
+    id:                 string;
+    author_id:          string;
+    author_username:    string;
+    author_avatar_url:  string | null;
+    title:              string;
+    status:             string;
+    content:            string;
+    likes:              number;
+    dislikes:           number;
+    categories:         Category[];
+    user_reaction:      string | null;
+    created_at:         Date;
+    updated_at:         Date | null;
 }
 
 export type Like = {
@@ -59,7 +55,7 @@ export type Like = {
     created_at:      Date;
 }
 
-export type LikesList = {
+export type PostLikesList = {
     data: Like[];
     pagination: { offset: number; limit: number; total: number };
 }
@@ -77,7 +73,7 @@ export default class PostDomain {
             throw new Unauthorized('Initiator profile not found');
         }
 
-        const post = await this.db.posts().filterID(postId).get();
+        const post = await this.db.posts().filterID(postId).get(initiatorId);
         if (!post) {
             throw new NotFound('Post not found');
         }
@@ -117,7 +113,7 @@ export default class PostDomain {
     }
 
     async getPost(params: GetPostInput): Promise<Post> {
-        const post = await this.db.posts().filterID(params.post_id).getWithDetails(params.user_id);
+        const post = await this.db.posts().filterID(params.post_id).get(params.user_id);
         if (!post) {
             throw new NotFound('Post not found');
         }
@@ -147,7 +143,7 @@ export default class PostDomain {
             }
         });
 
-        const updated = await this.db.posts().filterID(params.post_id).getWithDetails(params.initiator_id);
+        const updated = await this.db.posts().filterID(params.post_id).get(params.initiator_id);
         if (!updated) {
             throw new NotFound('Post not found after update');
         }
@@ -162,7 +158,7 @@ export default class PostDomain {
     }
 
     async likePost(params: LikePostInput): Promise<Post> {
-        let post = await this.db.posts().filterID(params.post_id).get();
+        let post = await this.db.posts().filterID(params.post_id).get(params.initiator_id);
         if (!post) {
             throw new NotFound('Post not found');
         }
@@ -184,7 +180,7 @@ export default class PostDomain {
     }
 
     async deleteLike(params: DeleteLikePostInput): Promise<Post> {
-        const post = await this.db.posts().filterID(params.post_id).get();
+        const post = await this.db.posts().filterID(params.post_id).get(params.initiator_id);
         if (!post) {
             throw new NotFound('Post not found');
         }
@@ -200,7 +196,7 @@ export default class PostDomain {
             throw new Unauthorized('User not found');
         }
 
-        const post = await this.db.posts().filterID(params.post_id).get();
+        const post = await this.db.posts().filterID(params.post_id).get(params.initiator_id);
         if (!post) {
             throw new NotFound('Post not found');
         }
@@ -214,7 +210,7 @@ export default class PostDomain {
             updated_at: new Date(),
         });
 
-        const updated = await this.db.posts().filterID(params.post_id).getWithDetails(params.initiator_id);
+        const updated = await this.db.posts().filterID(params.post_id).get(params.initiator_id);
         if (!updated) {
             throw new NotFound('Post not found after status change');
         }
@@ -247,7 +243,7 @@ export default class PostDomain {
         }
 
         const total = await query.count();
-        const rows  = await query.page(params.limit, params.offset).selectWithDetails(params.initiator_id);
+        const rows  = await query.page(params.limit, params.offset).select(params.initiator_id);
 
         log.info("listPosts rows ", rows);
 
@@ -257,7 +253,7 @@ export default class PostDomain {
         };
     }
 
-    async listLikesPosts(params: ListLikesPostsInput): Promise<LikesList> {
+    async listLikesPosts(params: ListLikesPostsInput): Promise<PostLikesList> {
         let query = this.db.postLikes();
 
         if (params.post_id) {

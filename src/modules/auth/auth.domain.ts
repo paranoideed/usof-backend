@@ -3,18 +3,20 @@ import { v4 as uuid } from 'uuid';
 import {Conflict, Forbidden, Unauthorized} from "../../api/errors";
 
 import database, {Database} from "../../repo/sql/database";
-
-import {
-    LoginInput,
-    RegisterInput,
-    ResetPasswordInput,
-} from "./auth.dto";
 import tokenManager, {TokenManager} from "./tokens_manager/manager";
 import passwordHasher, {PasswordHasher} from "./password_hasher/hasher";
+
 import {Profile} from "../profile/profile.domain";
 
+import {
+    DeleteAccountInput,
+    LoginInput,
+    RegisterByAdminInput,
+    RegisterDefaultInput,
+    ResetPasswordInput
+} from "./auth.dto";
 
-export type UserToken = {
+export type LoginResult = {
     profile: Profile;
     token: string;
 }
@@ -30,7 +32,26 @@ export default class AuthDomain {
         this.hasher = passwordHasher;
     }
 
-    async register(params: RegisterInput): Promise<void> {
+    async register(params: RegisterDefaultInput): Promise<void> {
+        const existing = await this.db.users().filterEmail(params.email).get();
+        if (existing) throw new Conflict('User with this email already exists');
+
+        const existingUsername = await this.db.users().filterUsername(params.username).get();
+        if (existingUsername) throw new Conflict('User with this username already exists');
+
+        const pasHash = await this.hasher.hashPassword(params.password);
+
+        await this.db.users().insert({
+            id:            uuid(),
+            role:          "user",
+            email:         params.email,
+            username:      params.username,
+            password_hash: pasHash,
+            created_at:    new Date(),
+        });
+    }
+
+    async registerByAdmin(params: RegisterByAdminInput): Promise<void> {
         const existing = await this.db.users().filterEmail(params.email).get();
         if (existing) throw new Conflict('User with this email already exists');
 
@@ -49,7 +70,7 @@ export default class AuthDomain {
         });
     }
 
-    async login(params: LoginInput): Promise<UserToken> {
+    async login(params: LoginInput): Promise<LoginResult> {
         let user;
         if (params.email) {
             user = await this.db.users().filterEmail(params.email).get();
@@ -75,16 +96,25 @@ export default class AuthDomain {
     }
 
     async resetPassword(params: ResetPasswordInput): Promise<void> {
-        const user = await this.db.users().filterID(params.user_id).get();
+        const user = await this.db.users().filterID(params.userId).get();
         if (!user) {
             throw new Unauthorized('User not found');
         }
 
-        const newHash = await this.hasher.hashPassword(params.new_password);
+        const newHash = await this.hasher.hashPassword(params.newPassword);
 
         await this.db.users().filterID(user.id).update({
             password_hash: newHash,
             updated_at: new Date(),
         });
+    }
+
+    async deleteUser(params: DeleteAccountInput): Promise<void> {
+        const user = await this.db.users().filterID(params.userId).get();
+        if (!user) {
+            throw new Unauthorized('User not found');
+        }
+
+        await this.db.users().filterID(user.id).delete();
     }
 }

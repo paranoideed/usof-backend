@@ -2,31 +2,27 @@ import { Knex } from 'knex';
 import { CategoryRow } from "./categories";
 
 export type PostStatus = 'active' | 'closed';
+export type UserReaction = 'like' | 'dislike' | null;
 
 export type PostRow = {
     id:                 string;
     author_id:          string;
-    author_username:    string; // из users.username
-    author_avatar_url:  string; // из users.avatar_url ("" если NULL)
+    author_username:    string;
+    author_avatar_url:  string;
     title:              string;
     status:             PostStatus;
     content:            string;
     likes:              number;
     dislikes:           number;
+    user_reaction:      UserReaction;
+    categories:         CategoryRow[];
     created_at:         Date;
     updated_at:         Date | null;
-};
-
-export type PostWithDetails = {
-    data:          PostRow;
-    categories:    CategoryRow[];
-    user_reaction: string | null;
 };
 
 export default class PostsQ {
     private builder: Knex.QueryBuilder<PostRow, PostRow[]>;
     private counter: Knex.QueryBuilder<PostRow, PostRow[]>;
-
     private readonly alias = 'p';
     private C = (col: string) => `${this.alias}.${col}`;
 
@@ -34,8 +30,6 @@ export default class PostsQ {
         this.builder = builder.clone().from({ [this.alias]: 'posts' });
         this.counter = builder.clone().from({ [this.alias]: 'posts' });
     }
-
-    // ----------------- mutations
 
     async insert(params: {
         id:         string;
@@ -58,8 +52,14 @@ export default class PostsQ {
         };
         await this.builder.client!.queryBuilder().table('posts').insert(dataDb);
 
-        // Вернём в ожидаемой форме с пустыми author_username / author_avatar_url
-        const data: PostRow = { ...dataDb, author_username: '', author_avatar_url: '' };
+        // Возвращаем плоский объект с виртуальными полями-заглушками
+        const data: PostRow = {
+            ...dataDb,
+            author_username:   '',
+            author_avatar_url: '',
+            user_reaction:     null,
+            categories:        [],
+        };
         return data;
     }
 
@@ -72,10 +72,10 @@ export default class PostsQ {
         updated_at?: Date | null;
     }): Promise<void> {
         const setMap: any = {};
-        if (Object.prototype.hasOwnProperty.call(set, 'title')) setMap.title = set.title!;
-        if (Object.prototype.hasOwnProperty.call(set, 'content')) setMap.content = set.content!;
-        if (Object.prototype.hasOwnProperty.call(set, 'status')) setMap.status = set.status!;
-        if (Object.prototype.hasOwnProperty.call(set, 'likes')) setMap.likes = set.likes!;
+        if (Object.prototype.hasOwnProperty.call(set, 'title'))    setMap.title = set.title!;
+        if (Object.prototype.hasOwnProperty.call(set, 'content'))  setMap.content = set.content!;
+        if (Object.prototype.hasOwnProperty.call(set, 'status'))   setMap.status = set.status!;
+        if (Object.prototype.hasOwnProperty.call(set, 'likes'))    setMap.likes = set.likes!;
         if (Object.prototype.hasOwnProperty.call(set, 'dislikes')) setMap.dislikes = set.dislikes!;
         if (Object.prototype.hasOwnProperty.call(set, 'updated_at')) {
             setMap.updated_at = set.updated_at ?? null;
@@ -89,85 +89,9 @@ export default class PostsQ {
         await this.builder.clone().del();
     }
 
-    // ----------------- plain selects (с автором)
-
-    async get(): Promise<PostRow | null> {
-        const client = this.builder.client!;
-        const row: any = await this.builder
-            .clone()
-            .leftJoin({ u: 'users' }, 'u.id', this.C('author_id'))
-            .clearSelect()
-            .select([
-                this.C('id'),
-                this.C('author_id'),
-                client.raw('u.username AS author_username'),
-                client.raw('u.avatar_url AS author_avatar_url'), // + avatar
-                this.C('title'),
-                this.C('status'),
-                this.C('content'),
-                this.C('likes'),
-                this.C('dislikes'),
-                this.C('created_at'),
-                this.C('updated_at'),
-            ])
-            .first();
-
-        if (!row) return null;
-
-        return {
-            id: row.id,
-            author_id: row.author_id,
-            author_username: String(row.author_username ?? ''),
-            author_avatar_url: String(row.author_avatar_url ?? ''), // + avatar
-            title: row.title,
-            status: row.status,
-            content: row.content,
-            likes: row.likes,
-            dislikes: row.dislikes,
-            created_at: row.created_at,
-            updated_at: row.updated_at,
-        };
-    }
-
-    async select(): Promise<PostRow[]> {
-        const client = this.builder.client!;
-        const rows: any[] = await this.builder
-            .clone()
-            .leftJoin({ u: 'users' }, 'u.id', this.C('author_id'))
-            .clearSelect()
-            .select([
-                this.C('id'),
-                this.C('author_id'),
-                client.raw('u.username AS author_username'),
-                client.raw('u.avatar_url AS author_avatar_url'), // + avatar
-                this.C('title'),
-                this.C('status'),
-                this.C('content'),
-                this.C('likes'),
-                this.C('dislikes'),
-                this.C('created_at'),
-                this.C('updated_at'),
-            ]);
-
-        return (rows ?? []).map((r) => ({
-            id: r.id,
-            author_id: r.author_id,
-            author_username: String(r.author_username ?? ''),
-            author_avatar_url: String(r.author_avatar_url ?? ''), // + avatar
-            title: r.title,
-            status: r.status,
-            content: r.content,
-            likes: r.likes,
-            dislikes: r.dislikes,
-            created_at: r.created_at,
-            updated_at: r.updated_at,
-        }));
-    }
-
-    // ----------------- selects with details
-
-    async getWithDetails(userId: string | null | undefined): Promise<PostWithDetails | null> {
-        const client = this.builder.client!;
+    // ----- READ ONE: возвращаем PostRow -----
+    async get(userId: string | null | undefined): Promise<PostRow | null> {
+        const client  = this.builder.client!;
         const hasUser = Boolean(userId);
 
         const catsSub = client
@@ -205,7 +129,7 @@ export default class PostsQ {
                 this.C('id'),
                 this.C('author_id'),
                 client.raw('u.username AS author_username'),
-                client.raw('u.avatar_url AS author_avatar_url'), // + avatar
+                client.raw('u.avatar_url AS author_avatar_url'),
                 this.C('title'),
                 this.C('status'),
                 this.C('content'),
@@ -220,28 +144,26 @@ export default class PostsQ {
 
         if (!row) return null;
 
-        const data: PostRow = {
-            id: row.id,
-            author_id: row.author_id,
-            author_username: String(row.author_username ?? ''),
-            author_avatar_url: String(row.author_avatar_url ?? ''), // + avatar
-            title: row.title,
-            status: row.status,
-            content: row.content,
-            likes: row.likes,
-            dislikes: row.dislikes,
-            created_at: row.created_at,
-            updated_at: row.updated_at,
+        return {
+            id:                 row.id,
+            author_id:          row.author_id,
+            author_username:    String(row.author_username ?? ''),
+            author_avatar_url:  String(row.author_avatar_url ?? ''),
+            title:              row.title,
+            status:             row.status,
+            content:            row.content,
+            likes:              row.likes,
+            dislikes:           row.dislikes,
+            user_reaction:      hasUser ? (row.user_reaction ?? null) : null,
+            categories:         parseCategoriesJson(row.categories_json),
+            created_at:         row.created_at,
+            updated_at:         row.updated_at,
         };
-
-        const categories = parseCategoriesJson(row.categories_json);
-        const user_reaction = hasUser ? (row.user_reaction ?? null) : null;
-
-        return { data, categories, user_reaction };
     }
 
-    async selectWithDetails(userId: string | null | undefined): Promise<PostWithDetails[]> {
-        const client = this.builder.client!;
+    // ----- READ MANY: возвращаем PostRow[] -----
+    async select(userId: string | null | undefined): Promise<PostRow[]> {
+        const client  = this.builder.client!;
         const hasUser = Boolean(userId);
 
         const catsSub = client
@@ -279,7 +201,7 @@ export default class PostsQ {
                 this.C('id'),
                 this.C('author_id'),
                 client.raw('u.username AS author_username'),
-                client.raw('u.avatar_url AS author_avatar_url'), // + avatar
+                client.raw('u.avatar_url AS author_avatar_url'),
                 this.C('title'),
                 this.C('status'),
                 this.C('content'),
@@ -291,28 +213,24 @@ export default class PostsQ {
                 client.raw('CAST(cats.categories_json AS CHAR) AS categories_json'),
             ]);
 
-        return (rows ?? []).map((row) => {
-            const data: PostRow = {
-                id: row.id,
-                author_id: row.author_id,
-                author_username: String(row.author_username ?? ''),
-                author_avatar_url: String(row.author_avatar_url ?? ''), // + avatar
-                title: row.title,
-                status: row.status,
-                content: row.content,
-                likes: row.likes,
-                dislikes: row.dislikes,
-                created_at: row.created_at,
-                updated_at: row.updated_at,
-            };
-            const categories = parseCategoriesJson(row.categories_json);
-            const user_reaction = hasUser ? (row.user_reaction ?? null) : null;
-            return { data, categories, user_reaction };
-        });
+        return (rows ?? []).map((row) => ({
+            id:                 row.id,
+            author_id:          row.author_id,
+            author_username:    String(row.author_username ?? ''),
+            author_avatar_url:  String(row.author_avatar_url ?? ''),
+            title:              row.title,
+            status:             row.status,
+            content:            row.content,
+            likes:              row.likes,
+            dislikes:           row.dislikes,
+            user_reaction:      hasUser ? (row.user_reaction ?? null) : null,
+            categories:         parseCategoriesJson(row.categories_json),
+            created_at:         row.created_at,
+            updated_at:         row.updated_at,
+        }));
     }
 
-    // ----------------- filters
-
+    // ----- ФИЛЬТРЫ/СОРТ/ПАГИНАЦИЯ/COUNT -----
     filterID(id: string): this {
         this.builder = this.builder.where(this.C('id'), id);
         this.counter = this.counter.where(this.C('id'), id);
@@ -325,7 +243,6 @@ export default class PostsQ {
         return this;
     }
 
-    // фильтр по username автора — через EXISTS (без постоянного JOIN для counter)
     filterUsername(username: string): this {
         const b = this.builder.client!;
         this.builder = this.builder.whereExists((qb) =>
@@ -426,8 +343,6 @@ export default class PostsQ {
         this.counter = this.counter.where(this.C('created_at'), '<=', ts);
         return this;
     }
-
-    // ----------------- ordering & paging
 
     orderByRating(asc = false): this {
         this.builder = this.builder.orderByRaw(

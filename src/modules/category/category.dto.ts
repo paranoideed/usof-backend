@@ -1,9 +1,5 @@
 import { z } from 'zod';
 
-export const CategoryIdSchema = z.object({
-    category_id: z.uuid(), // UUID v4 по умолчанию тоже ок
-});
-
 export const DeleteCategorySchema = z.object({
     category_id: z.uuid(),
 });
@@ -31,5 +27,5 @@ export const ListCategoriesSchema = z.object({
 export type CreateCategoryInput = z.infer<typeof CreateCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof UpdateCategorySchema>;
 export type ListCategoriesInput = z.infer<typeof ListCategoriesSchema>;
-export type GetCategoryInput = z.infer<typeof CategoryIdSchema>;
+export type GetCategoryInput = z.infer<typeof GetCategorySchema>;
 export type DeleteCategoryInput = z.infer<typeof DeleteCategorySchema>;

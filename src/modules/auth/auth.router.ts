@@ -31,9 +31,8 @@ authRouter.post(
 authRouter.post(
     "/logout",
     (req: Request, res: Response, next: NextFunction): Promise<Response | void>  =>
-    function (req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        // Placeholder for logout functionality, all operation logout on client side
-        res.status(200).json({ message: "User logged out successfully" });
+    async function (req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        return res.status(200).json({message: "User logged out successfully" });
     }(req, res, next)
 )
 
@@ -42,6 +41,13 @@ authRouter.post(
     authMiddleware,
     (req: Request, res: Response, next: NextFunction): Promise<Response | void>  =>
         authController.resetPassword(req, res, next)
+);
+
+authRouter.delete(
+    "/me",
+    authMiddleware,
+    (req: Request, res: Response, next: NextFunction): Promise<Response | void>  =>
+        authController.deleteAccount(req, res, next)
 );
 
 export default authRouter;

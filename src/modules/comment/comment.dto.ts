@@ -26,7 +26,7 @@ export const DeleteCommentSchema = z.object({
 export const LikeCommentSchema = z.object({
     author_id:  z.uuid(),
     comment_id: z.uuid(),
-    type:       z.enum(['like', 'dislike']),
+    like_type:  z.enum(['like', 'dislike']),
 });
 
 export const DeleteLikeCommentSchema = z.object({

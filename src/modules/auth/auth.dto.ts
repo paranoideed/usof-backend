@@ -5,14 +5,25 @@ const usernameRegex = /^[a-zA-Z0-9\-._!]+$/;
 const usernameError = "Username can only contain letters, numbers, and -._!";
 const passwordError = "Password can only contain letters, numbers, and -.&?+@$%^:_!";
 
-export const RegisterSchema = z.object({
-    email:    z.email().max(256),
-    role:     z.enum(['user', 'admin']),
+export const RegisterDefaultSchema = z.object({
+    email: z.email().max(256),
     username: z.string().min(3).max(32)
         .regex(usernameRegex, {
             message: usernameError,
         }),
+    password: z.string().min(6).max(64)
+        .regex(passwordRegex, {
+            message: passwordError,
+        }),
+});
 
+export const RegisterSchemaByAdmin = z.object({
+    email: z.email().max(256),
+    role: z.enum(['user', 'admin']),
+    username: z.string().min(3).max(32)
+        .regex(usernameRegex, {
+            message: usernameError,
+        }),
     password: z.string().min(6).max(64)
         .regex(passwordRegex, {
             message: passwordError,
@@ -47,12 +58,18 @@ export const LoginSchema = z.object({
 });
 
 export const ResetPassword = z.object({
-    user_id:     z.uuid(),
-    new_password: z.string().min(6).max(64).regex(passwordRegex, {
+    userId:     z.uuid(),
+    newPassword: z.string().min(6).max(64).regex(passwordRegex, {
         message: passwordError,
     }),
 });
 
-export type RegisterInput      = z.infer<typeof RegisterSchema>;
-export type LoginInput         = z.infer<typeof LoginSchema>;
-export type ResetPasswordInput = z.infer<typeof ResetPassword>;
+export const DeleteAccountSchema = z.object({
+    userId: z.uuid(),
+});
+
+export type RegisterDefaultInput = z.infer<typeof RegisterDefaultSchema>;
+export type RegisterByAdminInput = z.infer<typeof RegisterSchemaByAdmin>;
+export type LoginInput           = z.infer<typeof LoginSchema>;
+export type ResetPasswordInput   = z.infer<typeof ResetPassword>;
+export type DeleteAccountInput   = z.infer<typeof DeleteAccountSchema>;

@@ -150,13 +150,4 @@ export default class ProfileDomain {
 
         return user;
     }
-
-    async deleteProfile(user_id: string): Promise<void> {
-        const user = await this.db.users().filterID(user_id).get();
-        if (!user) {
-            throw new NotFound('User not found');
-        }
-
-        await this.db.users().filterID(user_id).delete();
-    }
 }

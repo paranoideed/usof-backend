@@ -19,12 +19,13 @@ import {
     Unauthorized,
 } from "../../api/errors";
 
-export type CommentData = {
+export type Comment = {
     id:              string;
     post_id:         string;
     author_id:       string;
     author_username: string;
     parent_id:       string | null;
+    user_reaction: string | null;
 
     replies_count:   number;
 
@@ -36,14 +37,13 @@ export type CommentData = {
     updated_at: Date | null;
 }
 
-export type Comment = {
-    data: CommentData;
-    user_reaction: string | null;
-}
-
 export type CommentList = {
     data: Comment[];
-    pagination: { offset: number; limit: number; total: number };
+    pagination: {
+        offset: number;
+        limit: number;
+        total: number;
+    };
 }
 
 export type Like = {
@@ -73,7 +73,7 @@ export default class CommentDomain {
             throw new Unauthorized('Initiator profile not found');
         }
 
-        const comment = await this.db.comments().filterID(postId).get();
+        const comment = await this.db.comments().filterID(postId).get(initiator.id);
         if (!comment) {
             throw new NotFound('Comment not found');
         }
@@ -89,13 +89,13 @@ export default class CommentDomain {
             throw new Unauthorized('Initiator are not found');
         }
 
-        const post = await this.db.posts().filterID(params.post_id).get();
+        const post = await this.db.posts().filterID(params.post_id).get(params.author_id);
         if (!post) {
             throw new NotFound('Post not found');
         }
 
         if (params.parent_id) {
-            const parentComment = await this.db.comments().filterID(params.parent_id).get();
+            const parentComment = await this.db.comments().filterID(params.parent_id).get(params.author_id);
             if (!parentComment) {
                 throw new NotFound('Parent comment not found');
             }
@@ -126,7 +126,7 @@ export default class CommentDomain {
     public async getComment(params: GetCommentInput): Promise<Comment> {
         const row = await this.db.comments().
             filterID(params.comment_id).
-            getWithDetails(params.initiator_id);
+            get(params.initiator_id);
         if (!row) {
             throw new NotFound('Comment not found');
         }
@@ -155,7 +155,7 @@ export default class CommentDomain {
         let rows = await query.
             orderByRating(false).
             page(params.limit, params.offset).
-            selectWithDetails(params.initiator_id);
+            select(params.initiator_id);
 
         return {
             data: rows,
@@ -168,7 +168,7 @@ export default class CommentDomain {
     }
 
     public async updateComment(params: UpdateCommentInput): Promise<Comment> {
-        const row = await this.db.comments().filterID(params.comment_id).get();
+        const row = await this.db.comments().filterID(params.comment_id).get(params.author_id);
         if (!row) {
             throw new NotFound('Comment not found');
         }
@@ -190,7 +190,7 @@ export default class CommentDomain {
     public async deleteComment(params: DeleteCommentInput): Promise<void> {
         await this.checkRight(params.author_id, params.comment_id);
 
-        const comment = await this.db.comments().filterID(params.comment_id).get();
+        const comment = await this.db.comments().filterID(params.comment_id).get(params.author_id);
         if (!comment) {
             throw new NotFound('Comment not found');
         }
@@ -210,7 +210,7 @@ export default class CommentDomain {
             throw new NotFound('User not found');
         }
 
-        const comment = await this.db.comments().filterID(params.comment_id).get();
+        const comment = await this.db.comments().filterID(params.comment_id).get(params.author_id);
         if (!comment) {
             throw new NotFound('Comment not found');
         }
@@ -219,7 +219,7 @@ export default class CommentDomain {
             id:              uuid(),
             comment_id:      params.comment_id,
             author_id:       params.author_id,
-            type:            params.type,
+            type:            params.like_type,
             created_at:      new Date(),
         })
 
@@ -232,7 +232,7 @@ export default class CommentDomain {
             throw new NotFound('User not found');
         }
 
-        const comment = await this.db.comments().filterID(params.comment_id).get();
+        const comment = await this.db.comments().filterID(params.comment_id).get(params.author_id);
         if (!comment) {
             throw new NotFound('Comment not found');
         }

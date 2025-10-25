@@ -80,13 +80,13 @@ BEGIN
             dislikes = GREATEST(dislikes + (NEW.`type` = 'dislike') - (OLD.`type` = 'dislike'), 0)
         WHERE id = NEW.comment_id;
 
-        UPDATE users
-        SET reputation = reputation + CASE
-            WHEN OLD.`type` = 'like'    AND NEW.`type` = 'dislike' THEN -2
-            WHEN OLD.`type` = 'dislike' AND NEW.`type` = 'like'    THEN  2
-            ELSE 0
-        END
-        WHERE id = (SELECT c.author_id FROM comments c WHERE c.id = NEW.comment_id);
+--         UPDATE users
+--         SET reputation = reputation + CASE
+--             WHEN OLD.`type` = 'like'    AND NEW.`type` = 'dislike' THEN -2
+--             WHEN OLD.`type` = 'dislike' AND NEW.`type` = 'like'    THEN  2
+--             ELSE 0
+--         END
+--         WHERE id = (SELECT c.author_id FROM comments c WHERE c.id = NEW.comment_id);
     END IF;
 END;
 
@@ -99,9 +99,9 @@ BEGIN
         dislikes = GREATEST(dislikes - (OLD.`type` = 'dislike'), 0)
     WHERE id = OLD.comment_id;
 
-    UPDATE users
-    SET reputation = reputation + CASE WHEN OLD.`type` = 'like' THEN -1 ELSE 1 END
-    WHERE id = (SELECT c.author_id FROM comments c WHERE c.id = OLD.comment_id);
+--     UPDATE users
+--     SET reputation = reputation + CASE WHEN OLD.`type` = 'like' THEN -1 ELSE 1 END
+--     WHERE id = (SELECT c.author_id FROM comments c WHERE c.id = OLD.comment_id);
 END;
 
 CREATE INDEX idx_comment_likes_comment_id ON comment_likes (comment_id);

@@ -10,6 +10,7 @@ import {
 } from "./profile.dto";
 import ProfileDomain from "./profile.domain";
 import {PayloadTooLarge, UnsupportedMediaType} from "../../api/errors";
+import {profileListResponse, profileResponse} from "./profile.response";
 
 export default class ProfileController {
     private domain: ProfileDomain;
@@ -19,6 +20,10 @@ export default class ProfileController {
     }
 
     async getOwnProfile(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
         const candidate = {
             user_id: req.user?.id,
         }
@@ -33,7 +38,9 @@ export default class ProfileController {
         try {
             const user = await this.domain.getProfile(parsed.data);
 
-            return res.status(200).json(user);
+            return res.status(200).json(
+                profileResponse(user)
+            );
         } catch (err) {
             log.error("Error in getOwnProfile", { error: err });
 
@@ -57,7 +64,9 @@ export default class ProfileController {
         try {
             const user = await this.domain.getProfile(parsed.data);
 
-            return res.status(200).json(user);
+            return res.status(200).json(
+                profileResponse(user)
+            );
         } catch (err) {
             log.error("Error in getProfile", { error: err });
 
@@ -82,7 +91,9 @@ export default class ProfileController {
         try {
             const users = await this.domain.listProfiles(parsed.data);
 
-            return res.status(200).json(users);
+            return res.status(200).json(
+                profileListResponse(users)
+            );
         } catch (err) {
             log.error("Error in listUsers", { error: err });
 
@@ -95,10 +106,18 @@ export default class ProfileController {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
+        if (req.body?.data?.type !== "profile") {
+            return res.status(400).json({ message: "Invalid request type" });
+        }
+
+        if (req.user?.id !== req.body?.data?.id) {
+            return res.status(403).json({ message: "Forbidden" });
+        }
+
         const candidate = {
             user_id:   req.user.id,
-            username:  req.body?.username,
-            pseudonym: req.body?.pseudonym,
+            username:  req.body?.data?.attributes?.username,
+            pseudonym: req.body?.data?.attributes?.pseudonym,
         }
 
         const parsed = UpdateProfileSchema.safeParse(candidate);
@@ -111,7 +130,9 @@ export default class ProfileController {
         try {
             const user = await this.domain.updateProfile(parsed.data);
 
-            return res.status(200).json(user);
+            return res.status(200).json(
+                profileResponse(user)
+            );
         } catch (err) {
             log.error("Error in updateProfile", { error: err });
 
@@ -120,7 +141,17 @@ export default class ProfileController {
     }
 
     async uploadAvatar(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if (!req.user) return res.sendStatus(401);
+        if (!req.user?.id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        if (req.body?.data?.type !== "profile") {
+            return res.status(400).json({ message: "Invalid request type" });
+        }
+
+        if (req.user?.id !== req.body?.data?.id) {
+            return res.status(403).json({ message: "Forbidden" });
+        }
 
         const parsed = UpdateAvatarSchema.safeParse({
             user_id: req.user.id,
@@ -152,7 +183,9 @@ export default class ProfileController {
         try {
             const user = await this.domain.updateAvatar(parsed.data);
 
-            return res.status(200).json(user);
+            return res.status(200).json(
+                profileResponse(user)
+            );
         } catch (err: any) {
             log.error("Error in uploadAvatar", { error: err });
 

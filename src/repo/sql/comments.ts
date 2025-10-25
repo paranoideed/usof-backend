@@ -1,10 +1,14 @@
 import { Knex } from 'knex';
 
+export type UserReaction = 'like' | 'dislike' | null;
+
 export type CommentRow = {
     id:              string;
     post_id:         string;
     author_id:       string;
-    author_username: string; // из users.username
+    author_username: string;
+    // ВАЖНО: виртуальное поле, приходит из JOIN-а, в таблице `comments` его нет
+    user_reaction:   UserReaction;
     parent_id:       string | null;
 
     replies_count:   number;
@@ -17,11 +21,6 @@ export type CommentRow = {
     updated_at:      Date | null;
 };
 
-export type CommentWithDetails = {
-    data:          CommentRow;
-    user_reaction: string | null;
-};
-
 export default class CommentsQ {
     private builder: Knex.QueryBuilder<CommentRow, CommentRow[]>;
     private counter: Knex.QueryBuilder<CommentRow, CommentRow[]>;
@@ -29,11 +28,9 @@ export default class CommentsQ {
     private C = (col: string) => `${this.alias}.${col}`;
 
     constructor(builder: Knex.QueryBuilder<CommentRow, CommentRow[]>) {
-        this.builder = builder.clone().from({ [this.alias]: 'comments' });
-        this.counter = builder.clone().from({ [this.alias]: 'comments' });
+        this.builder  = builder.clone().from({ [this.alias]: 'comments' });
+        this.counter  = builder.clone().from({ [this.alias]: 'comments' });
     }
-
-    // ---------- mutations
 
     async insert(params: {
         id:         string;
@@ -58,8 +55,12 @@ export default class CommentsQ {
 
         await this.builder.client!.queryBuilder().table('comments').insert(dataDb);
 
-        // Вернём совместимую структуру; реальный username придёт из get/select
-        const data: CommentRow = { ...dataDb, author_username: '' };
+        // Возвращаем плоский объект с virtual-полями (username пустой, reaction = null)
+        const data: CommentRow = {
+            ...dataDb,
+            author_username: '',
+            user_reaction: null
+        };
         return data;
     }
 
@@ -101,84 +102,8 @@ export default class CommentsQ {
         await this.builder.clone().del();
     }
 
-    // ---------- plain selects (с автором)
-
-    async get(): Promise<CommentRow | null> {
-        const client = this.builder.client!;
-        const row: any = await this.builder
-            .clone()
-            .leftJoin({ u: 'users' }, 'u.id', this.C('author_id'))
-            .clearSelect()
-            .select([
-                this.C('id'),
-                this.C('post_id'),
-                this.C('author_id'),
-                client.raw('u.username AS author_username'),
-                this.C('parent_id'),
-                this.C('replies_count'),
-                this.C('content'),
-                this.C('likes'),
-                this.C('dislikes'),
-                this.C('created_at'),
-                this.C('updated_at'),
-            ])
-            .first();
-
-        if (!row) return null;
-
-        return {
-            id: row.id,
-            post_id: row.post_id,
-            author_id: row.author_id,
-            author_username: String(row.author_username ?? ''),
-            parent_id: row.parent_id,
-            replies_count: row.replies_count,
-            content: row.content,
-            likes: row.likes,
-            dislikes: row.dislikes,
-            created_at: row.created_at,
-            updated_at: row.updated_at,
-        };
-    }
-
-    async select(): Promise<CommentRow[]> {
-        const client = this.builder.client!;
-        const rows: any[] = await this.builder
-            .clone()
-            .leftJoin({ u: 'users' }, 'u.id', this.C('author_id'))
-            .clearSelect()
-            .select([
-                this.C('id'),
-                this.C('post_id'),
-                this.C('author_id'),
-                client.raw('u.username AS author_username'),
-                this.C('parent_id'),
-                this.C('replies_count'),
-                this.C('content'),
-                this.C('likes'),
-                this.C('dislikes'),
-                this.C('created_at'),
-                this.C('updated_at'),
-            ]);
-
-        return (rows ?? []).map((r) => ({
-            id: r.id,
-            post_id: r.post_id,
-            author_id: r.author_id,
-            author_username: String(r.author_username ?? ''),
-            parent_id: r.parent_id,
-            replies_count: r.replies_count,
-            content: r.content,
-            likes: r.likes,
-            dislikes: r.dislikes,
-            created_at: r.created_at,
-            updated_at: r.updated_at,
-        }));
-    }
-
-    // ---------- selects with details
-
-    async getWithDetails(userId: string | null | undefined): Promise<CommentWithDetails | null> {
+    // === READ ONE ===
+    async get(userId: string | null | undefined): Promise<CommentRow | null> {
         const client = this.builder.client!;
         const uid = String(userId ?? '').trim();
         const hasUser = uid.length > 0;
@@ -205,7 +130,9 @@ export default class CommentsQ {
             this.C('dislikes'),
             this.C('created_at'),
             this.C('updated_at'),
-            hasUser ? client.raw('l_me.type AS user_reaction') : client.raw('NULL AS user_reaction'),
+            hasUser
+                ? client.raw('l_me.type AS user_reaction')
+                : client.raw('NULL AS user_reaction'),
         ]).first();
 
         if (!row) return null;
@@ -215,6 +142,7 @@ export default class CommentsQ {
             post_id: row.post_id,
             author_id: row.author_id,
             author_username: String(row.author_username ?? ''),
+            user_reaction: hasUser ? (row.user_reaction ?? null) : null,
             parent_id: row.parent_id,
             replies_count: row.replies_count,
             content: row.content,
@@ -224,14 +152,12 @@ export default class CommentsQ {
             updated_at: row.updated_at,
         };
 
-        return {
-            data,
-            user_reaction: hasUser ? (row.user_reaction ?? null) : null,
-        };
+        return data;
     }
 
-    async selectWithDetails(userId: string | null | undefined): Promise<CommentWithDetails[]> {
-        const client = this.builder.client!;
+    // === READ MANY ===
+    async select(userId: string | null | undefined): Promise<CommentRow[]> {
+        const client  = this.builder.client!;
         const hasUser = Boolean(userId);
 
         let q = this.builder.clone()
@@ -257,29 +183,28 @@ export default class CommentsQ {
             this.C('dislikes'),
             this.C('created_at'),
             this.C('updated_at'),
-            hasUser ? client.raw('l_me.type AS user_reaction') : client.raw('NULL AS user_reaction'),
+            hasUser
+                ? client.raw('l_me.type AS user_reaction')
+                : client.raw('NULL AS user_reaction'),
         ]);
 
         return (rows ?? []).map((row) => ({
-            data: {
-                id: row.id,
-                post_id: row.post_id,
-                author_id: row.author_id,
-                author_username: String(row.author_username ?? ''),
-                parent_id: row.parent_id,
-                replies_count: row.replies_count,
-                content: row.content,
-                likes: row.likes,
-                dislikes: row.dislikes,
-                created_at: row.created_at,
-                updated_at: row.updated_at,
-            },
+            id: row.id,
+            post_id: row.post_id,
+            author_id: row.author_id,
+            author_username: String(row.author_username ?? ''),
             user_reaction: hasUser ? (row.user_reaction ?? null) : null,
+            parent_id: row.parent_id,
+            replies_count: row.replies_count,
+            content: row.content,
+            likes: row.likes,
+            dislikes: row.dislikes,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
         }));
     }
 
-    // ---------- filters
-
+    // === FILTERS/ORDER/PAGE/COUNT ===
     filterID(id: string): this {
         this.builder = this.builder.where(this.C('id'), id);
         this.counter = this.counter.where(this.C('id'), id);
@@ -298,7 +223,6 @@ export default class CommentsQ {
         return this;
     }
 
-    // фильтр по username автора — через EXISTS (без постоянного JOIN, корректно для count)
     filterUsername(username: string): this {
         const b = this.builder.client!;
         this.builder = this.builder.whereExists((qb) =>
@@ -326,8 +250,6 @@ export default class CommentsQ {
         }
         return this;
     }
-
-    // ---------- ordering & paging
 
     orderByCreatedAt(asc = false): this {
         this.builder = this.builder.orderBy(this.C('created_at'), asc ? 'asc' : 'desc');

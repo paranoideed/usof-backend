@@ -12,7 +12,7 @@ import PostCategoriesQ from './post_categories';
 import PostLikesQ from "./post_likes";
 import CommentLikesQ from "./comment_likes";
 
-const MIGRATIONS_DIR = path.resolve(process.cwd(), 'src', 'data', 'migrations');
+const MIGRATIONS_DIR = path.resolve(process.cwd(), 'assets', 'migrations');
 
 export interface SqlConfig {
     host: string;

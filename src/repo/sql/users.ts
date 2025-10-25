@@ -86,6 +86,13 @@ export default class UsersQ {
         await this.builder.clone().update(setMap);
     }
 
+    async addReputation(amount: number): Promise<void> {
+        await this.builder.clone().update({
+            reputation: (this.builder.client as any).raw('reputation + ?', [amount]),
+            updated_at: new Date(),
+        });
+    }
+
     async delete(): Promise<void> {
         await this.builder.clone().del();
     }

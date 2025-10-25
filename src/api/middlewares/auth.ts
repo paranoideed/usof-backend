@@ -1,47 +1,49 @@
 import type { Request, Response, NextFunction } from "express";
-
 import tokenManager from "../../modules/auth/tokens_manager/manager";
-import { Unauthorized } from "../errors";
 
 declare global {
     namespace Express {
         interface UserTokenDataInfo {
-            id:   string;
-            role: string;
+            id?:   string | null;
+            role?: string | null;
         }
 
         interface Request {
-            user?: UserTokenDataInfo;
+            user?: UserTokenDataInfo | null;
         }
     }
 }
 
 export default function authMiddleware(
-    req:  Request,
-    res:  Response,
+    req: Request,
+    res: Response,
     next: NextFunction,
 ) {
-    req.user ??= {} as any;
+    req.user = null;
+
     try {
         let token = "";
 
-        if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
-            token = req.headers.authorization.split(" ")?.[1] || "";
-        }
-        else if (req.cookies && req.cookies.accessToken) {
+        if (req.headers.authorization?.startsWith("Bearer ")) {
+            token = req.headers.authorization.split(" ")[1] ?? "";
+        } else if (req.cookies?.accessToken) {
             token = req.cookies.accessToken;
         }
+
         if (!token) {
-            throw new Unauthorized("No access token provided");
+            return next();
         }
 
         const payload = tokenManager.verifyToken(token);
+
         req.user = {
             id:   payload.sub,
-            role: payload.role
+            role: payload.role,
         };
-        next();
-    } catch (err) {
-        next(new Unauthorized("Invalid or expired access token"));
+
+        return next();
+    } catch {
+        req.user = null;
+        return next();
     }
 }

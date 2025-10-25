@@ -14,6 +14,7 @@ import {
     UpdatePostSchema,
 } from "./post.dto";
 import PostDomain from "./post.domain";
+import {postLikeListResponse, postListResponse, postResponse} from "./post.response";
 
 export default class PostController {
     private domain: PostDomain;
@@ -24,11 +25,19 @@ export default class PostController {
 
     
     async createPost(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (req.body?.data?.type !== "post") {
+            return res.status(400).json({ message: "Invalid request type" });
+        }
+
+        if (!req.user?.id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
         const candidate = {
             author_id:  req.user?.id,
-            title:      req.body?.title,
-            content:    req.body?.content,
-            categories: req.body?.categories,
+            title:      req.body?.data?.attributes?.title,
+            content:    req.body?.data?.attributes?.content,
+            categories: req.body?.data?.attributes?.categories,
         };
 
         const parsed = CreatePostSchema.safeParse(candidate);
@@ -41,9 +50,9 @@ export default class PostController {
         try {
             const post = await this.domain.createPost(parsed.data);
 
-            return res.status(201).json({
-                post: post,
-            });
+            return res.status(201).json(
+                postResponse(post)
+            );
         } catch (err) {
             log.error("Error in createPost", { error: err });
 
@@ -67,7 +76,9 @@ export default class PostController {
         try {
             const post = await this.domain.getPost(parsed.data);
 
-            return res.status(200).json(post);
+            return res.status(200).json(
+                postResponse(post)
+            );
         } catch (err) {
             log.error("Error in getPost", { error: err });
 
@@ -98,22 +109,35 @@ export default class PostController {
         try {
             const posts = await this.domain.listPosts(parsed.data);
 
-            return res.status(200).json(posts);
+            return res.status(200).json(
+                postListResponse(posts)
+            );
         } catch (err) {
             log.error("Error in listPosts", { error: err });
 
             next(err);
         }
     }
-
     
     async updatePost(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        if (req.body?.data?.type !== "post") {
+            return res.status(400).json({ message: "Invalid request type" });
+        }
+
+        if (req.body?.data?.id !== req.params?.post_id) {
+            return res.status(400).json({ message: "Post ID in body does not match URL parameter" });
+        }
+
         const candidate = {
             post_id:      req.params?.post_id,
             initiator_id: req.user?.id,
-            title:        req.body?.title,
-            content:      req.body?.content,
-            categories:   req.body?.categories,
+            title:        req.body?.data?.attributes?.title,
+            content:      req.body?.data?.attributes?.content,
+            categories:   req.body?.data?.attributes?.categories,
         }
 
         const parsed = UpdatePostSchema.safeParse(candidate);
@@ -127,8 +151,9 @@ export default class PostController {
         try {
             const post = await this.domain.updatePost(parsed.data);
 
-            console.log("Updated post ", post.data);
-            return res.status(200).json(post);
+            return res.status(200).json(
+                postResponse(post)
+            );
         } catch (err) {
             log.error("Error in updatePost", { error: err });
 
@@ -137,11 +162,23 @@ export default class PostController {
     }
     
     async updatePostStatus(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        if (req.body?.data?.type !== "post") {
+            return res.status(400).json({ message: "Invalid request type" });
+        }
+
+        if (req.body?.data?.id !== req.params?.post_id) {
+            return res.status(400).json({ message: "Post ID in body does not match URL parameter" });
+        }
+
         const candidate = {
             initiator_id:   req.user?.id,
             initiator_role: req.user?.role,
             post_id:        req.params?.post_id,
-            status:         req.body?.status,
+            status:         req.body?.data?.attributes?.status,
         }
 
         const parsed = UpdatePostStatusSchema.safeParse(candidate);
@@ -153,13 +190,15 @@ export default class PostController {
 
         try {
             const post = await this.domain.getPost(parsed.data);
-            if (post.data.author_id !== candidate.initiator_id && candidate.initiator_role !== 'admin') {
+            if (post.author_id !== candidate.initiator_id && candidate.initiator_role !== 'admin') {
                 return res.status(403).json({ message: "Only the author or admin can change the post status" });
             }
 
             const update = await this.domain.updatePostStatus(parsed.data);
 
-            return res.status(200).json(update);
+            return res.status(200).json(
+                postResponse(update)
+            );
         } catch (err) {
             log.error("Error in updatePostStatus", { error: err });
 
@@ -168,6 +207,18 @@ export default class PostController {
     }
 
     async deletePost(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        if (req.body?.data?.type !== "post") {
+            return res.status(400).json({ message: "Invalid request type" });
+        }
+
+        if (req.body?.data?.id !== req.params?.post_id) {
+            return res.status(400).json({ message: "Post ID in body does not match URL parameter" });
+        }
+
         const candidate = {
             initiator_id: req.user?.id,
             post_id:      req.params?.post_id,
@@ -192,10 +243,22 @@ export default class PostController {
     }
 
     async like(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        if (req.body?.data?.type !== "post") {
+            return res.status(400).json({ message: "Invalid request type" });
+        }
+
+        if (req.body?.data?.id !== req.params?.post_id) {
+            return res.status(400).json({ message: "Post ID in body does not match URL parameter" });
+        }
+
         const candidate = {
             initiator_id: req.user?.id,
             post_id:      req.params?.post_id,
-            type:         req.body?.type,
+            type:         req.body?.data?.attributes?.type,
         }
 
         const parsed = LikePostSchema.safeParse(candidate);
@@ -207,7 +270,10 @@ export default class PostController {
 
         try {
             const post = await this.domain.likePost(parsed.data);
-            return res.status(200).json(post);
+
+            return res.status(200).json(
+                postResponse(post)
+            );
         } catch (err) {
             log.error("Error in like", { error: err });
 
@@ -216,6 +282,18 @@ export default class PostController {
     }
 
     async deleteLike(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        if (req.body?.data?.type !== "post") {
+            return res.status(400).json({ message: "Invalid request type" });
+        }
+
+        if (req.body?.data?.id !== req.params?.post_id) {
+            return res.status(400).json({ message: "Post ID in body does not match URL parameter" });
+        }
+
         const candidate = {
             initiator_id: req.user?.id,
             post_id:      req.params?.post_id,
@@ -230,7 +308,10 @@ export default class PostController {
 
         try {
             const post = await this.domain.deleteLike(parsed.data);
-            return res.status(200).json(post);
+
+            return res.status(200).json(
+                postResponse(post)
+            );
         } catch (err) {
             log.error("Error in like", { error: err });
 
@@ -255,7 +336,9 @@ export default class PostController {
         try {
             const likes = await this.domain.listLikesPosts(parsed.data);
 
-            return res.status(200).json(likes);
+            return res.status(200).json(
+                postLikeListResponse(likes)
+            );
         } catch (err) {
             log.error("Error in ListLikes", { error: err });
 

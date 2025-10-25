@@ -14,6 +14,7 @@ import {
     UpdateCommentSchema
 } from "./comment.dto";
 import CommentDomain from "./comment.domain";
+import {commentLikeListResponse, commentListResponse, commentResponse} from "./comment.response";
 
 export default class CommentController {
     private domain: CommentDomain;
@@ -23,11 +24,19 @@ export default class CommentController {
     }
     
     async createComment(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        if (req.body?.data?.type !== "comment") {
+            return res.status(400).json({ message: "Invalid type, expected 'comment'" });
+        }
+
         const candidate = {
             author_id:  req.user?.id,
-            post_id:    req.body?.post_id,
-            content:    req.body?.content,
-            parent_id:  req.body?.parent_id,
+            post_id:    req.body?.data?.attributes?.post_id,
+            content:    req.body?.data?.attributes?.content,
+            parent_id:  req.body?.data?.attributes?.parent_id,
         };
 
         log.info("createComment called", { candidate });
@@ -42,7 +51,9 @@ export default class CommentController {
         try {
             const comment = await this.domain.createComment(parsed.data);
 
-            return res.status(201).json(comment);
+            return res.status(201).json(
+                commentResponse(comment)
+            );
         }
         catch (err) {
             log.error("Error in createComment", { error: err });
@@ -53,8 +64,8 @@ export default class CommentController {
 
     async getComment(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         let candidate = {
-            comment_id: req.params.comment_id,
-            initiator_id:    req.user?.id,
+            comment_id:   req.params.comment_id,
+            initiator_id: req.user?.id,
         };
 
         const parsed = GetCommentSchema.safeParse(candidate);
@@ -67,7 +78,9 @@ export default class CommentController {
         try {
             const comment = await this.domain.getComment(parsed.data);
 
-            return res.status(200).json(comment);
+            return res.status(200).json(
+                commentResponse(comment)
+            );
         }
         catch (err) {
             log.error("Error in getComment", { error: err });
@@ -101,12 +114,9 @@ export default class CommentController {
                 return res.status(404).json({ message: "No comments found" });
             }
 
-            return res.status(200).json({
-                data: comments.data,
-                total: comments.pagination.total,
-                limit: comments.pagination.limit,
-                offset: comments.pagination.offset
-            });
+            return res.status(200).json(
+                commentListResponse(comments)
+            );
         }
         catch (err) {
             log.error("Error in listComments", { error: err });
@@ -115,12 +125,23 @@ export default class CommentController {
         }
     }
 
-    
     async updateComment(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        if (req.body?.data?.type !== "comment") {
+            return res.status(400).json({ message: "Invalid type, expected 'comment'" });
+        }
+
+        if (!req.params?.comment_id !== req.body?.data?.id) {
+            return res.status(400).json({ message: "Comment ID in params and body do not match" });
+        }
+
         const candidate = {
-            comment_id: req.params.comment_id,
             author_id:  req.user?.id,
-            content:    req.body?.content,
+            comment_id: req.params.comment_id,
+            content:    req.body?.data?.attributes?.content,
         };
 
         const parsed = UpdateCommentSchema.safeParse(candidate);
@@ -133,7 +154,9 @@ export default class CommentController {
         try {
             const comment = await this.domain.updateComment(parsed.data);
 
-            return res.status(200).json(comment);
+            return res.status(200).json(
+                commentResponse(comment)
+            );
         }
         catch (err) {
             log.error("Error in updateComment", { error: err });
@@ -143,6 +166,10 @@ export default class CommentController {
     }
 
     async deleteComment(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
         const candidate = {
             comment_id: req.params.comment_id,
             author_id:  req.user?.id,
@@ -168,10 +195,22 @@ export default class CommentController {
     }
 
     async like(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        if (req.body?.data?.type !== "comment") {
+            return res.status(400).json({ message: "Invalid type, expected 'comment'" });
+        }
+
+        if (req.body?.data?.id !== req.params?.comment_id) {
+            return res.status(400).json({ message: "Comment ID in params and body do not match" });
+        }
+
         const candidate = {
             author_id:  req.user?.id,
             comment_id: req.params?.comment_id,
-            type:       req.body?.type,
+            like_type:  req.body?.data?.attributes?.type,
         }
 
         const parsed = LikeCommentSchema.safeParse(candidate);
@@ -193,6 +232,10 @@ export default class CommentController {
     }
 
     async deleteLike(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
         const candidate = {
             author_id:  req.user?.id,
             comment_id: req.params?.comment_id,
@@ -216,7 +259,7 @@ export default class CommentController {
         }
     }
 
-    async ListLikes(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+    async listLikes(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const candidate = {
             comment_id: req.params?.comment_id,
             author_id:  req.query?.user_id,
@@ -236,7 +279,9 @@ export default class CommentController {
         try {
             const likes = await this.domain.listCommentLikes(parsed.data);
 
-            return res.status(200).json(likes);
+            return res.status(200).json(
+                commentLikeListResponse(likes)
+            );
         } catch (err) {
             log.error("Error in listCommentLikes", { error: err });
 

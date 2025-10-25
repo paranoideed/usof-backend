@@ -11,6 +11,7 @@ import {
     UpdateCategorySchema
 } from "./category.dto";
 import CategoryDomain from "./category.domain";
+import {categoryListResponse, categoryResponse} from "./category.response";
 
 export default class CategoryController {
     private domain: CategoryDomain;
@@ -19,11 +20,18 @@ export default class CategoryController {
         this.domain = new CategoryDomain();
     }
 
-    
     async createCategory(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (!req.user?.role || req.user.role !== "admin") {
+            return res.status(403).json({ message: "Forbidden" });
+        }
+
+        if (req.body?.data?.type !== "category") {
+            return res.status(400).json({ message: "Invalid type" });
+        }
+
         const candidate = {
-            title:       req.body?.title,
-            description: req.body?.description,
+            title:       req.body?.data?.attributes?.title,
+            description: req.body?.data?.attributes?.description,
         };
 
         const parsed = CreateCategorySchema.safeParse(candidate);
@@ -36,7 +44,9 @@ export default class CategoryController {
         try {
             const category = await this.domain.createCategory(parsed.data);
 
-            return res.status(201).json(category);
+            return res.status(201).json(
+                categoryResponse(category)
+            );
         } catch (err) {
             log.error("Error in createCategory", { error: err });
 
@@ -60,12 +70,9 @@ export default class CategoryController {
         try {
             const categories = await this.domain.listCategories(parsed.data);
 
-            return res.status(200).json({
-                data: categories.data,
-                total: categories.pagination.total,
-                limit: categories.pagination.limit,
-                offset: categories.pagination.offset
-            });
+            return res.status(200).json(
+                categoryListResponse(categories)
+            );
         } catch (err) {
             log.error("Error in listCategories", { error: err });
 
@@ -90,7 +97,9 @@ export default class CategoryController {
                 return res.status(404).json({ message: "Category not found" });
             }
 
-            return res.status(200).json(category);
+            return res.status(200).json(
+                categoryResponse(category)
+            );
         } catch (err) {
             log.error("Error in getCategory", { error: err });
 
@@ -98,12 +107,23 @@ export default class CategoryController {
         }
     }
 
-    
     async updateCategory(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (!req.user?.role || req.user.role !== "admin") {
+            return res.status(403).json({ message: "Forbidden" });
+        }
+
+        if (req.body?.data?.type !== "category") {
+            return res.status(400).json({ message: "Invalid type" });
+        }
+
+        if (!req.params?.category_id != req.body?.data?.id) {
+            return res.status(400).json({ message: "Category ID in URL and body do not match" });
+        }
+
         const candidate = {
             category_id: req.params.category_id,
-            title: req.body?.title,
-            description: req.body?.description
+            title: req.body?.data?.attributes?.title,
+            description: req.body?.data?.attributes?.description
         }
 
         const parsed = UpdateCategorySchema.safeParse(candidate);
@@ -116,7 +136,9 @@ export default class CategoryController {
         try {
             const category = await this.domain.updateCategory(parsed.data);
 
-            return res.status(200).json(category);
+            return res.status(200).json(
+                categoryResponse(category)
+            );
         } catch (err) {
             log.error("Error in updateCategory", { error: err });
 
@@ -125,6 +147,10 @@ export default class CategoryController {
     }
 
     async deleteCategory(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (!req.user?.role || req.user.role !== "admin") {
+            return res.status(403).json({ message: "Forbidden" });
+        }
+
         const candidate = {
             category_id: req.params?.category_id,
         }
