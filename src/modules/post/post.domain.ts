@@ -243,9 +243,7 @@ export default class PostDomain {
         }
 
         const total = await query.count();
-        const rows  = await query.page(params.limit, params.offset).select(params.initiator_id);
-
-        log.info("listPosts rows ", rows);
+        const rows  = await query.page(params.limit, params.offset).select(params.initiator_id);;
 
         return {
             posts: rows,

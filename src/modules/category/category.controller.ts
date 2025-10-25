@@ -113,10 +113,14 @@ export default class CategoryController {
         }
 
         if (req.body?.data?.type !== "category") {
+            log.error("Invalid type in updateCategory", { type: req.body?.data?.type });
+
             return res.status(400).json({ message: "Invalid type" });
         }
 
-        if (!req.params?.category_id != req.body?.data?.id) {
+        if (req.params?.category_id !== req.body?.data?.id) {
+            log.error("Category ID mismatch in updateCategory", { param_id: req.params?.category_id, body_id: req.body?.data?.id });
+
             return res.status(400).json({ message: "Category ID in URL and body do not match" });
         }
 

@@ -107,10 +107,12 @@ export default class ProfileController {
         }
 
         if (req.body?.data?.type !== "profile") {
+            log.error("Invalid request type in updateProfile", { type: req.body?.data?.type });
             return res.status(400).json({ message: "Invalid request type" });
         }
 
         if (req.user?.id !== req.body?.data?.id) {
+            log.error("Forbidden updateProfile attempt", { user_id: req.user?.id, body_id: req.body?.data?.id });
             return res.status(403).json({ message: "Forbidden" });
         }
 
@@ -143,14 +145,6 @@ export default class ProfileController {
     async uploadAvatar(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         if (!req.user?.id) {
             return res.status(401).json({ message: "Unauthorized" });
-        }
-
-        if (req.body?.data?.type !== "profile") {
-            return res.status(400).json({ message: "Invalid request type" });
-        }
-
-        if (req.user?.id !== req.body?.data?.id) {
-            return res.status(403).json({ message: "Forbidden" });
         }
 
         const parsed = UpdateAvatarSchema.safeParse({

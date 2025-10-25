@@ -22,7 +22,6 @@ export default class PostController {
     constructor() {
         this.domain = new PostDomain();
     }
-
     
     async createPost(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         if (req.body?.data?.type !== "post") {

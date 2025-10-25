@@ -115,7 +115,7 @@ export default class AuthController {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
-        if (req.body?.type !== "reset_password") {
+        if (req.body?.data?.type !== "reset_password") {
             return res.status(400).json({ message: "Invalid type" });
         }
 
