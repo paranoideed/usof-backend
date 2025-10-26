@@ -210,14 +210,6 @@ export default class PostController {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
-        if (req.body?.data?.type !== "post") {
-            return res.status(400).json({ message: "Invalid request type" });
-        }
-
-        if (req.body?.data?.id !== req.params?.post_id) {
-            return res.status(400).json({ message: "Post ID in body does not match URL parameter" });
-        }
-
         const candidate = {
             initiator_id: req.user?.id,
             post_id:      req.params?.post_id,
@@ -283,14 +275,6 @@ export default class PostController {
     async deleteLike(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         if (!req.user?.id) {
             return res.status(401).json({ message: "Unauthorized" });
-        }
-
-        if (req.body?.data?.type !== "post") {
-            return res.status(400).json({ message: "Invalid request type" });
-        }
-
-        if (req.body?.data?.id !== req.params?.post_id) {
-            return res.status(400).json({ message: "Post ID in body does not match URL parameter" });
         }
 
         const candidate = {
