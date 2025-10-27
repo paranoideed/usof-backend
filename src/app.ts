@@ -10,7 +10,7 @@ export class App {
     public expressApp: express.Express;
 
     constructor(
-        private readonly port = Number(config.server.port) // <-- привели к числу
+        private readonly port = Number(config.server.port)
     ) {
         this.port = config.server.port;
         this.expressApp = express();

@@ -52,7 +52,6 @@ export default class PostsQ {
         };
         await this.builder.client!.queryBuilder().table('posts').insert(dataDb);
 
-        // Возвращаем плоский объект с виртуальными полями-заглушками
         const data: PostRow = {
             ...dataDb,
             author_username:   '',
@@ -89,7 +88,6 @@ export default class PostsQ {
         await this.builder.clone().del();
     }
 
-    // ----- READ ONE: возвращаем PostRow -----
     async get(userId: string | null | undefined): Promise<PostRow | null> {
         const client  = this.builder.client!;
         const hasUser = Boolean(userId);
@@ -161,7 +159,6 @@ export default class PostsQ {
         };
     }
 
-    // ----- READ MANY: возвращаем PostRow[] -----
     async select(userId: string | null | undefined): Promise<PostRow[]> {
         const client  = this.builder.client!;
         const hasUser = Boolean(userId);
@@ -230,7 +227,6 @@ export default class PostsQ {
         }));
     }
 
-    // ----- ФИЛЬТРЫ/СОРТ/ПАГИНАЦИЯ/COUNT -----
     filterID(id: string): this {
         this.builder = this.builder.where(this.C('id'), id);
         this.counter = this.counter.where(this.C('id'), id);

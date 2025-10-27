@@ -1,4 +1,4 @@
-import 'dotenv/config'; // Шаг 1: Загружаем .env
+import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
@@ -74,7 +74,6 @@ class Config {
     }
 
     constructor(raw: RawConfig) {
-        // --- 1. Загрузка из YAML (raw) ---
         this.server = {
             host: raw.server?.host,
             port: raw.server?.port,
@@ -100,14 +99,12 @@ class Config {
 
         this.aws = {
             region:            raw.aws?.region,
-            // Сначала берем из YAML (если есть)
             access_key_id:     raw.aws?.access_key_id,
             secret_access_key: raw.aws?.secret_access_key,
             bucket_name:       raw.aws?.bucket_name,
             public_base:       raw.aws?.public_base,
         };
 
-        // --- 2. Переопределение из process.env (из .env файла) ---
         this.server.port = Number(process.env.PORT) || this.server.port;
 
         this.database.sql.host = process.env.DB_HOST || this.database.sql.host;
@@ -116,13 +113,11 @@ class Config {
         this.database.sql.password = process.env.DB_PASSWORD || this.database.sql.password;
         this.database.sql.name = process.env.DB_DATABASE || this.database.sql.name;
 
-        // Шаг 2: Исправлено - используем process.env и применяем тот же паттерн
         this.aws.access_key_id = process.env.AWS_ACCESS_KEY_ID || this.aws.access_key_id;
         this.aws.secret_access_key = process.env.AWS_SECRET_ACCESS_KEY || this.aws.secret_access_key;
         this.aws.region = process.env.AWS_REGION || this.aws.region;
         this.aws.bucket_name = process.env.AWS_BUCKET_NAME || this.aws.bucket_name;
 
-        // --- 3. Валидация (проверка) ---
         this.server.host = req(this.server.host, 'server.host');
         this.server.port = req(this.server.port, 'server.port');
         this.server.logging.level = req(this.server.logging.level, 'server.logging.level');
@@ -136,7 +131,6 @@ class Config {
         this.database.sql.password = req(this.database.sql.password, 'database.sql.password');
         this.database.sql.name = req(this.database.sql.name, 'database.sql.name');
 
-        // Шаг 3: Добавлена валидация для AWS
         this.aws.region = req(this.aws.region, 'aws.region');
         this.aws.access_key_id = req(this.aws.access_key_id, 'aws.access_key_id');
         this.aws.secret_access_key = req(this.aws.secret_access_key, 'aws.secret_access_key');
@@ -160,12 +154,11 @@ class Config {
             raw = yaml.load(text) as RawConfig;
         } catch (e) {
             console.warn(`[Config] Config file is not set: ${absPath}`);
-            // Шаг 4: Исправлен баг - добавлен aws: {} в дефолтный raw
             raw = {
                 server: { logging: {} },
                 jwt: {},
                 database: { sql: {} },
-                aws: {} // <-- Добавлено
+                aws: {}
             } as any;
         }
 

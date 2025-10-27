@@ -105,7 +105,7 @@ export class Database {
             }
             console.log('All up migrations applied.');
         } finally {
-            await this.destroy(); // важен в любом случае
+            await this.destroy();
         }
     }
 

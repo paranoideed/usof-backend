@@ -18,7 +18,6 @@ export default class PostLikesQ {
     private joined = false;
 
     constructor(builder: Knex.QueryBuilder<PostLikeRow, PostLikeRow[]>) {
-        // ожидаем, что builder = knex<PostLikeRow>("post_likes")
         this.builder = builder;
         this.counter = builder.clone();
     }
@@ -45,7 +44,7 @@ export default class PostLikesQ {
             created_at: params.created_at,
         };
 
-        await this.builder.clone().upsert(data); // твой helper/плагин
+        await this.builder.clone().upsert(data);
         return data;
     }
 
@@ -102,7 +101,6 @@ export default class PostLikesQ {
         return this;
     }
 
-    // фильтр по нику через JOIN users
     filterUsername(username: string): this {
         this.joinUsersOnce();
         this.builder = this.builder.where("u.username", username);
@@ -127,7 +125,6 @@ export default class PostLikesQ {
     }
 
     async count(): Promise<number> {
-        // если был JOIN — считаем DISTINCT по id
         const row: any = await this.counter.clone().clearOrder?.()
             .countDistinct({ cnt: "post_likes.id" }).first();
         const val = row?.cnt ?? row?.["count(*)"] ?? Object.values(row ?? { 0: 0 })[0] ?? 0;

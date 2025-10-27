@@ -8,7 +8,6 @@ export type CommentLikeRow = {
     created_at: Date;
 };
 
-// то, что реально возвращаем наружу
 export type CommentLikeView = CommentLikeRow & {
     author_username: string;
 };
@@ -16,17 +15,15 @@ export type CommentLikeView = CommentLikeRow & {
 export default class CommentLikesQ {
     private builder: Knex.QueryBuilder<CommentLikeRow, CommentLikeRow[]>;
     private counter: Knex.QueryBuilder<CommentLikeRow, CommentLikeRow[]>;
-    private joined = false; // чтобы не джоинить дважды
+    private joined = false;
 
     constructor(builder: Knex.QueryBuilder<CommentLikeRow, CommentLikeRow[]>) {
-        this.builder = builder;           // ожидаем, что это FROM comment_likes
-        this.counter = builder.clone();   // для count()
+        this.builder = builder;
+        this.counter = builder.clone();
     }
 
-    // джоин по требованию (фильтр по username/выборка со столбцом author_username)
     private joinUsersOnce() {
         if (this.joined) return;
-        // alias-ы удобны, чтобы не конфликтовали имена
         this.builder = this.builder.join({ u: "users" }, "u.id", "comment_likes.author_id");
         this.counter = this.counter.join({ u: "users" }, "u.id", "comment_likes.author_id");
         this.joined = true;
@@ -66,7 +63,6 @@ export default class CommentLikesQ {
         return row ?? null;
     }
 
-    // выборка списка с username
     async select(): Promise<CommentLikeView[]> {
         const rows = (await this.builder
             .clone()
@@ -109,8 +105,6 @@ export default class CommentLikesQ {
         return this;
     }
 
-    // ⚠️ раньше у тебя было where('author_username', ...) — такого столбца нет.
-    // теперь фильтруем по users.username через join
     filterUsername(username: string): this {
         this.joinUsersOnce();
         this.builder = this.builder.where("u.username", username);
@@ -135,7 +129,6 @@ export default class CommentLikesQ {
     }
 
     async count(): Promise<number> {
-        // если были join-ы — считаем DISTINCT по id, чтобы не раздуть кол-во
         const q = this.counter.clone().clearOrder?.();
         const row: any = await q.countDistinct({ cnt: "comment_likes.id" }).first();
         const val = row?.cnt ?? row?.["count(*)"] ?? Object.values(row ?? { 0: 0 })[0] ?? 0;

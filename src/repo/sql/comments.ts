@@ -7,7 +7,7 @@ export type CommentRow = {
     post_id:         string;
     author_id:       string;
     author_username: string;
-    // ВАЖНО: виртуальное поле, приходит из JOIN-а, в таблице `comments` его нет
+
     user_reaction:   UserReaction;
     parent_id:       string | null;
 
@@ -55,7 +55,6 @@ export default class CommentsQ {
 
         await this.builder.client!.queryBuilder().table('comments').insert(dataDb);
 
-        // Возвращаем плоский объект с virtual-полями (username пустой, reaction = null)
         const data: CommentRow = {
             ...dataDb,
             author_username: '',
@@ -102,7 +101,6 @@ export default class CommentsQ {
         await this.builder.clone().del();
     }
 
-    // === READ ONE ===
     async get(userId: string | null | undefined): Promise<CommentRow | null> {
         const client = this.builder.client!;
         const uid = String(userId ?? '').trim();
@@ -155,7 +153,6 @@ export default class CommentsQ {
         return data;
     }
 
-    // === READ MANY ===
     async select(userId: string | null | undefined): Promise<CommentRow[]> {
         const client  = this.builder.client!;
         const hasUser = Boolean(userId);
@@ -204,7 +201,6 @@ export default class CommentsQ {
         }));
     }
 
-    // === FILTERS/ORDER/PAGE/COUNT ===
     filterID(id: string): this {
         this.builder = this.builder.where(this.C('id'), id);
         this.counter = this.counter.where(this.C('id'), id);
